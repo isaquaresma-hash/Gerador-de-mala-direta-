@@ -6,7 +6,7 @@ import base64
 # Configuração da página do Streamlit
 st.set_page_config(page_title="Gerador de Mala Direta", layout="wide")
 
-# Função para aplicar a imagem de fundo sem cortar o topo e ajustar cores dos textos
+# Função para aplicar a imagem de fundo e ajustar os espaçamentos/estilos
 def carregar_configuracao_estilo(caminho_imagem):
     try:
         with open(caminho_imagem, "rb") as image_file:
@@ -20,27 +20,27 @@ def carregar_configuracao_estilo(caminho_imagem):
             z-index: 1;
         }}
         
-        /* Ajusta o espaçamento do topo para o conteúdo subir */
+        /* Ajusta o topo do contêiner principal para dar espaço à logo */
         .block-container {{
-            padding-top: 2rem !important;
+            padding-top: 10rem !important; /* Aumentado para empurrar o conteúdo abaixo da logo */
         }}
 
-        /* Fixa a imagem no topo sem cortar a logo */
+        /* Fixa a imagem no topo */
         .stApp {{
             background-image: url("data:image/png;base64,{encoded_string}");
             background-size: 100% auto;
             background-position: top center;
             background-repeat: no-repeat;
             background-attachment: fixed;
-            background-color: #1a3323; /* Cor de fundo complementar caso role a página */
+            background-color: #1a3323;
         }}
 
-        /* Força a cor branca nos textos principais para dar contraste */
+        /* Força a cor branca nos textos principais */
         .stApp p, .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp label {{
             color: white !important;
         }}
 
-        /* Mantém o texto das opções de seleção visível/escuro */
+        /* Mantém o texto dentro do campo de seleção visível/escuro */
         .stApp .stMultiSelect {{
             color: initial !important;
         }}
@@ -50,7 +50,7 @@ def carregar_configuracao_estilo(caminho_imagem):
     except Exception as e:
         st.warning(f"Não foi possível carregar o estilo de fundo: {e}")
 
-# Aplica a imagem de fundo do seu repositório
+# Aplica a imagem de fundo do repositório
 carregar_configuracao_estilo("fundo do maleiro.png")
 
 # Título da aplicação
@@ -98,4 +98,4 @@ try:
         st.warning("Selecione pelo menos uma coluna para exportar.")
 
 except Exception as e:
-    st.error(f"Erro ao carregar a planilha. Certifique-se de que o arquivo Excel enviado para o GitHub tem o mesmo nome configurado na linha 53 do código. Detalhes: {e}")
+    st.error(f"Erro ao carregar a planilha. Certifique-se de que o arquivo Excel enviado para o GitHub tem o mesmo nome configurado no código. Detalhes: {e}")
