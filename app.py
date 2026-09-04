@@ -1,8 +1,33 @@
 import streamlit as st
 import pandas as pd
 from io import BytesIO
+import base64
 
 st.set_page_config(page_title="Gerador de Mala Direta", layout="wide")
+
+# Função para converter a imagem local/GitHub em Base64 para usar no CSS
+def carregar_imagem_fundo(caminho_imagem):
+    try:
+        with open(caminho_imagem, "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read()).decode()
+        
+        css_fundo = f"""
+        <style>
+        .stApp {{
+            background-image: url("data:image/png;base64,{encoded_string}");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }}
+        </style>
+        """
+        st.markdown(css_fundo, unsafe_allow_html=True)
+    except Exception as e:
+        st.warning(f"Não foi possível carregar a imagem de fundo: {e}")
+
+# Aplica o fundo com a imagem 'fundo do maleiro.png'
+carregar_imagem_fundo("fundo do maleiro.png")
 
 st.title("📊 Gerador de Mala Direta")
 
