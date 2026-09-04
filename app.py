@@ -5,13 +5,14 @@ import base64
 
 st.set_page_config(page_title="Gerador de Mala Direta", layout="wide")
 
-# Função para converter a imagem local/GitHub em Base64 para usar no CSS
-def carregar_imagem_fundo(caminho_imagem):
+# Função para converter a imagem local/GitHub em Base64 para usar no CSS e definir cores de texto
+def carregar_configuracao_estilo(caminho_imagem):
     try:
         with open(caminho_imagem, "rb") as image_file:
             encoded_string = base64.b64encode(image_file.read()).decode()
         
-        css_fundo = f"""
+        # Adiciona CSS para o fundo e para forçar o texto a ser branco
+        css_fundo_e_texto = f"""
         <style>
         .stApp {{
             background-image: url("data:image/png;base64,{encoded_string}");
@@ -20,15 +21,24 @@ def carregar_imagem_fundo(caminho_imagem):
             background-repeat: no-repeat;
             background-attachment: fixed;
         }}
+        /* Força a cor branca em todos os elementos de texto principais */
+        .stApp p, .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp label {{
+            color: white !important;
+        }}
+        /* Garante que o texto dentro dos inputs (como multiselect) continue visível/escuro */
+        .stApp .stMultiSelect {{
+            color: initial !important;
+        }}
         </style>
         """
-        st.markdown(css_fundo, unsafe_allow_html=True)
+        st.markdown(css_fundo_e_texto, unsafe_allow_html=True)
     except Exception as e:
-        st.warning(f"Não foi possível carregar a imagem de fundo: {e}")
+        st.warning(f"Não foi possível carregar o estilo de fundo: {e}")
 
-# Aplica o fundo com a imagem 'fundo do maleiro.png'
-carregar_imagem_fundo("fundo do maleiro.png")
+# Aplica o fundo e o texto branco com a imagem 'fundo do maleiro.png'
+carregar_configuracao_estilo("fundo do maleiro.png")
 
+# Título da aplicação
 st.title("📊 Gerador de Mala Direta")
 
 # 1. Carrega o banco de dados diretamente do repositório
@@ -45,6 +55,7 @@ try:
     colunas_disponiveis = df.columns.tolist()
     
     st.subheader("Selecione as informações desejadas:")
+    # O texto do label "Escolha as colunas para compor a nova planilha:" ficará branco
     colunas_selecionadas = st.multiselect(
         "Escolha as colunas para compor a nova planilha:",
         options=colunas_disponiveis,
@@ -70,6 +81,7 @@ try:
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
     else:
+        # A mensagem de aviso (warning) terá o texto branco
         st.warning("Selecione pelo menos uma coluna para exportar.")
 
 except Exception as e:
