@@ -6,7 +6,7 @@ import base64
 # Configuração da página do Streamlit
 st.set_page_config(page_title="Gerador de Mala Direta", layout="wide")
 
-# Função para aplicar a imagem de fundo e ajustar os espaçamentos/estilos
+# Função para aplicar a imagem de fundo e ajustar os espaçamentos/estilos compactos
 def carregar_configuracao_estilo(caminho_imagem):
     try:
         with open(caminho_imagem, "rb") as image_file:
@@ -22,7 +22,9 @@ def carregar_configuracao_estilo(caminho_imagem):
         
         /* Ajusta o topo do contêiner principal para dar espaço à logo */
         .block-container {{
-            padding-top: 10rem !important; /* Aumentado para empurrar o conteúdo abaixo da logo */
+            padding-top: 10rem !important;
+            padding-bottom: 2rem !important;
+            max-width: 900px !important; /* Limita a largura do bloco central para ficar mais compacto */
         }}
 
         /* Fixa a imagem no topo */
@@ -35,14 +37,34 @@ def carregar_configuracao_estilo(caminho_imagem):
             background-color: #1a3323;
         }}
 
-        /* Força a cor branca nos textos principais */
+        /* Força a cor branca nos textos principais e reduz tamanhos/espaçamentos */
         .stApp p, .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp label {{
             color: white !important;
+        }}
+
+        /* Reduz margens e tamanhos das seções/subtítulos */
+        .stApp h3 {{
+            font-size: 1.2rem !important;
+            margin-top: 0.5rem !important;
+            margin-bottom: 0.5rem !important;
+        }}
+
+        /* Compacta as caixas de alerta (success / warning) */
+        div[data-testid="stAlert"] {{
+            padding: 0.5rem 1rem !important;
+            font-size: 0.9rem !important;
         }}
 
         /* Mantém o texto dentro do campo de seleção visível/escuro */
         .stApp .stMultiSelect {{
             color: initial !important;
+        }}
+        
+        /* Ajusta o botão para ficar compacto e alinhado */
+        div.stDownloadButton > button {{
+            margin-top: 10rem;
+            padding: 0.4rem 1rem !important;
+            font-size: 0.95rem !important;
         }}
         </style>
         """
@@ -53,7 +75,7 @@ def carregar_configuracao_estilo(caminho_imagem):
 # Aplica a imagem de fundo do repositório
 carregar_configuracao_estilo("fundo do maleiro.png")
 
-# Título da aplicação
+# Título da aplicação (mantido no tamanho original)
 st.title("📊 Gerador de Mala Direta")
 
 # 1. Carrega o banco de dados diretamente do repositório
@@ -80,10 +102,7 @@ try:
         # Filtra a planilha base com as colunas escolhidas
         df_filtrado = df[colunas_selecionadas]
 
-        st.subheader("Pré-visualização dos Dados:")
-        st.dataframe(df_filtrado.head(10), use_container_width=True)
-
-        # 3. Prepara o arquivo Excel para download
+        # 3. Prepara o arquivo Excel para download direto (sem pré-visualização)
         buffer = BytesIO()
         with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
             df_filtrado.to_excel(writer, index=False, sheet_name='Mala Direta')
