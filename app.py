@@ -3,7 +3,7 @@ import pandas as pd
 from io import BytesIO
 import base64
 
-# Configuração da página do Streamlit
+# Configuração da página do Streamlit em largura total
 st.set_page_config(page_title="Gerador de Mala Direta", layout="wide")
 
 # Função para aplicar a imagem de fundo e ajustar os espaçamentos/estilos compactos
@@ -20,11 +20,10 @@ def carregar_configuracao_estilo(caminho_imagem):
             z-index: 1;
         }}
         
-        /* Ajusta o topo do contêiner principal para dar espaço à logo */
+        /* Ajusta o topo do contêiner principal mantendo a largura total */
         .block-container {{
             padding-top: 10rem !important;
             padding-bottom: 2rem !important;
-            max-width: 900px !important; /* Limita a largura do bloco central para ficar mais compacto */
         }}
 
         /* Fixa a imagem no topo */
@@ -37,19 +36,19 @@ def carregar_configuracao_estilo(caminho_imagem):
             background-color: #1a3323;
         }}
 
-        /* Força a cor branca nos textos principais e reduz tamanhos/espaçamentos */
+        /* Força a cor branca nos textos principais */
         .stApp p, .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp label {{
             color: white !important;
         }}
 
-        /* Reduz margens e tamanhos das seções/subtítulos */
+        /* Compacta fontes e espaçamentos das seções */
         .stApp h3 {{
             font-size: 1.2rem !important;
             margin-top: 0.5rem !important;
             margin-bottom: 0.5rem !important;
         }}
 
-        /* Compacta as caixas de alerta (success / warning) */
+        /* Compacta as caixas de aviso/sucesso */
         div[data-testid="stAlert"] {{
             padding: 0.5rem 1rem !important;
             font-size: 0.9rem !important;
@@ -60,9 +59,9 @@ def carregar_configuracao_estilo(caminho_imagem):
             color: initial !important;
         }}
         
-        /* Ajusta o botão para ficar compacto e alinhado */
+        /* Estilização e espaçamento do botão de download */
         div.stDownloadButton > button {{
-            margin-top: 10rem;
+            margin-top: 1rem;
             padding: 0.4rem 1rem !important;
             font-size: 0.95rem !important;
         }}
@@ -75,7 +74,7 @@ def carregar_configuracao_estilo(caminho_imagem):
 # Aplica a imagem de fundo do repositório
 carregar_configuracao_estilo("fundo do maleiro.png")
 
-# Título da aplicação (mantido no tamanho original)
+# Título da aplicação
 st.title("📊 Gerador de Mala Direta")
 
 # 1. Carrega o banco de dados diretamente do repositório
