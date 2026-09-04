@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Gerador de Mala Direta Excel</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 30px; line-height: 1.6; }
+    .step { margin-bottom: 25px; padding: 15px; border: 1px solid #ccc; border-radius: 8px; }
+    #columns-container { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+    .checkbox-label { background: #f0f0f0; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+    button { background-color: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+    button:disabled { background-color: #ccc; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <h2>Gerador de Mala Direta em Excel</h2>
+
+  <div class="step">
+    <h3>1. Selecione a planilha base (.xlsx ou .csv)</h3>
+    <input type="file" id="file-input" accept=".xlsx, .xls, .csv" />
+  </div>
+
+  <div class="step">
+    <h3>2. Escolha as informações que deseja incluir na Mala Direta</h3>
+    <div id="columns-container">Envie uma planilha para carregar os campos...</div>
+  </div>
+
+  <div class="step">
+    <h3>3. Gerar Arquivo Final</h3>
+    <button id="download-btn" disabled>Baixar Mala Direta (.xlsx)</button>
+  </div>
+
+  <script>
+    let rawData = [];
+
+    document.getElementById('file-input').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        
+        rawData = XLSX.utils.sheet_to_json(worksheet);
+
+        if (rawData.length > 0) {
+          renderColumnCheckboxes(Object.keys(rawData[0]));
+          document.getElementById('download-btn').disabled = false;
+        } else {
+          alert("A planilha parece estar vazia.");
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    function renderColumnCheckboxes(headers) {
+      const container = document.getElementById('columns-container');
+      container.innerHTML = '';
+
+      headers.forEach(header => {
+        const label = document.createElement('label');
+        label.className = 'checkbox-label';
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = header;
+        checkbox.checked = true;
+
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(' ' + header));
+        container.appendChild(label);
+      });
+    }
+
+    document.getElementById('download-btn').addEventListener('click', function() {
+      const selectedColumns = Array.from(
+        document.querySelectorAll('#columns-container input[type="checkbox"]:checked')
+      ).map(cb => cb.value);
+
+      if (selectedColumns.length === 0) {
+        alert("Selecione pelo menos uma coluna para exportar.");
+        return;
+      }
+
+      const filteredData = rawData.map(row => {
+        const newRow = {};
+        selectedColumns.forEach(col => {
+          newRow[col] = row[col] !== undefined ? row[col] : '';
+        });
+        return newRow;
+      });
+
+      const newSheet = XLSX.utils.json_to_sheet(filteredData);
+      const newWorkbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(newWorkbook, newSheet, "Mala Direta");
+
+      XLSX.writeFile(newWorkbook, "mala_direta.xlsx");
+    });
+  </script>
+</body>
+</html>
