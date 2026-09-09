@@ -205,12 +205,15 @@ try:
     df_original = carregar_dados()
     df_original.columns = [str(col).strip() for col in df_original.columns]
     
-    # Mapeamento dinâmico das colunas
+    # Mapeamento dinâmico das colunas de filtro
     coluna_situacao = "Situação do Município" if "Situação do Município" in df_original.columns else (df_original.columns[2] if len(df_original.columns) > 2 else None)
     coluna_porte = "Tipo" if "Tipo" in df_original.columns else (df_original.columns[1] if len(df_original.columns) > 1 else None)
     coluna_ranking = "Ranking" if "Ranking" in df_original.columns else (df_original.columns[19] if len(df_original.columns) > 19 else None)
     coluna_uf = "UF" if "UF" in df_original.columns else (df_original.columns[6] if len(df_original.columns) > 6 else None)
     coluna_municipio = "Muncípio" if "Muncípio" in df_original.columns else ("Município" if "Município" in df_original.columns else (df_original.columns[7] if len(df_original.columns) > 7 else None))
+
+    # Guardando lista de colunas vitais de consulta/filtro
+    colunas_principais_filtros = [col for col in [coluna_situacao, coluna_porte, coluna_ranking, coluna_uf, coluna_municipio] if col and col in df_original.columns]
 
     def normalizar(texto):
         if pd.isna(texto):
@@ -253,7 +256,6 @@ try:
     c1, c2, c3, c4, c5 = st.columns([1, 1, 1, 1, 1.2])
 
     df_filtrado = df_original.copy()
-    colunas_dos_filtros_usados = []
 
     # 1. Situação
     with c1:
@@ -263,7 +265,6 @@ try:
             sel_sit = st.selectbox("Selecione a Situação:", options=opcoes_sit, key="sb_sit")
             if sel_sit != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_situacao].apply(normalizar) == normalizar(sel_sit)]
-                colunas_dos_filtros_usados.append(coluna_situacao)
 
     # 2. Porte
     with c2:
@@ -273,7 +274,6 @@ try:
             sel_porte = st.selectbox("Selecione o Porte:", options=opcoes_porte, key="sb_porte")
             if sel_porte != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_porte].apply(normalizar) == normalizar(sel_porte)]
-                colunas_dos_filtros_usados.append(coluna_porte)
 
     # 3. Ranking
     with c3:
@@ -285,7 +285,6 @@ try:
             sel_rank = st.selectbox("Selecione o Ranking:", options=opcoes_rank, key="sb_rank")
             if sel_rank != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_ranking].apply(normalizar) == normalizar(sel_rank)]
-                colunas_dos_filtros_usados.append(coluna_ranking)
 
     # 4. Estado (UF)
     with c4:
@@ -295,7 +294,6 @@ try:
             sel_uf = st.selectbox("Selecione a UF:", options=opcoes_uf, key="sb_uf")
             if sel_uf != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_uf].apply(normalizar) == normalizar(sel_uf)]
-                colunas_dos_filtros_usados.append(coluna_uf)
 
     # 5. Município
     with c5:
@@ -305,7 +303,6 @@ try:
             sel_mun = st.selectbox("Escolha o Município:", options=opcoes_mun, key="sb_mun")
             if sel_mun != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_municipio].apply(normalizar) == normalizar(sel_mun)]
-                colunas_dos_filtros_usados.append(coluna_municipio)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -348,14 +345,11 @@ try:
     )
 
     # --- PROCESSAMENTO E EXPORTAÇÃO ---
-    # Junta as colunas que você selecionou com as colunas que você filtrou no topo (evitando colunas duplicadas)
-    todas_colunas_finais = list(colunas_selecionadas)
-    for col_f in colunas_dos_filtros_usados:
-        if col_f not in todas_colunas_finais:
-            todas_colunas_finais.append(col_f)
-
-    # Reordena conforme a ordem original da planilha para manter tudo organizado
-    todas_colunas_finais = [c for c in df_original.columns if c in todas_colunas_finais]
+    # Junta as 5 colunas de filtro principais + as colunas escolhidas no multiselect
+    conjunto_colunas = set(colunas_selecionadas).union(set(colunas_principais_filtros))
+    
+    # Preserva a ordem original exata da planilha
+    todas_colunas_finais = [c for c in df_original.columns if c in conjunto_colunas]
 
     if todas_colunas_finais and len(df_filtrado) > 0:
         df_exportar = df_filtrado[todas_colunas_finais]
