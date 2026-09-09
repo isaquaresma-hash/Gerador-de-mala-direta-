@@ -15,7 +15,8 @@ USUARIOS_AUTORIZADOS = {
     "sueli.rodrigues@fnp.org.br": "SenhaForte",
     "joao.oliveira@fnp.org.br": "SenhaForte",
     "isa.quaresma@fnp.org.br": "SenhaForte",
-    "jailma.sousa@fnp.org.br": "SenhaForte"
+    "jailma.sousa@fnp.org.br": "SenhaForte",
+    "amanda.anjos@fnp.org.br": "SenhaForte"
 }
 
 def validar_login():
