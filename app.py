@@ -79,18 +79,18 @@ def carregar_configuracao_estilo(caminho_imagem):
             padding-bottom: 2rem !important;
         }}
 
-        /* Customização para diminuir e reposicionar o Título Principal */
+        /* Customização para diminuir e REPOSICIONAR MAIS PARA BAIXO o Título Principal */
         .titulo-personalizado {{
             font-size: 1.8rem !important; /* Tamanho menor da fonte */
             font-weight: bold;
             color: white !important;
-            margin-top: 25px !important;  /* Empurra o título para baixo */
-            margin-bottom: 10px !important;
+            margin-top: 60px !important;  /* Aumentado para descer mais o título */
+            margin-bottom: 15px !important;
         }}
 
         /* Customização para alinhar a área do usuário logado */
         .user-header-box {{
-            margin-top: 25px !important;
+            margin-top: 60px !important;  /* Alinhado com o título */
         }}
 
         /* Fundo customizado */
@@ -218,7 +218,7 @@ carregar_configuracao_estilo("fundo do maleiro.png")
 # Barra Superior com o título ajustado e usuário logado
 col_head1, col_head2 = st.columns([8, 2])
 with col_head1:
-    # Título personalizado (menor e deslocado para baixo)
+    # Título personalizado desceu de 25px para 60px
     st.markdown('<div class="titulo-personalizado">📊 Gerador de Mala Direta</div>', unsafe_allow_html=True)
 with col_head2:
     st.markdown('<div class="user-header-box">', unsafe_allow_html=True)
@@ -398,7 +398,7 @@ try:
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
     else:
-        st.warning("Selecione ao menos uma coluna no campo acima para habilitar do download.")
+        st.warning("Selecione ao menos uma coluna no campo acima para habilitar o download.")
 
 except Exception as e:
     st.error(f"Erro ao processar a planilha. Verifique o arquivo Excel enviado. Detalhes: {e}")
