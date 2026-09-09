@@ -356,10 +356,14 @@ try:
         * **Tratamento 3**: Formato de pronome direto/saudação personalizada usada para correspondência da Mala Direta (ex: *Prefeito(a)* / *Senhor(a) Prefeito(a)*).
         """)
 
+    # Filtra as colunas exportáveis removendo qualquer referência ao "Valor 2027"
     colunas_exportaveis = [col for col in df_original.columns if "valor 2027" not in str(col).strip().lower()]
 
+    # Validação e limpeza do session_state para garantir que apenas opções válidas existam
     if "ms_cols" not in st.session_state:
         st.session_state["ms_cols"] = colunas_exportaveis
+    else:
+        st.session_state["ms_cols"] = [col for col in st.session_state["ms_cols"] if col in colunas_exportaveis]
 
     btn_col1, btn_col2, _ = st.columns([1.5, 1.5, 5])
 
@@ -376,7 +380,6 @@ try:
     colunas_selecionadas = st.multiselect(
         "Escolha as colunas desejadas para compor o Excel:",
         options=colunas_exportaveis,
-        default=st.session_state["ms_cols"],
         key="ms_cols"
     )
 
