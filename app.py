@@ -6,7 +6,7 @@ import base64
 # Configuração da página do Streamlit em largura total
 st.set_page_config(page_title="Gerador de Mala Direta", layout="wide")
 
-# Função para aplicar a imagem de fundo e estilizar os elementos com alto contraste
+# Função para aplicar a imagem de fundo e estilizar a interface
 def carregar_configuracao_estilo(caminho_imagem):
     try:
         with open(caminho_imagem, "rb") as image_file:
@@ -62,12 +62,12 @@ def carregar_configuracao_estilo(caminho_imagem):
             border: 1px solid #386646;
         }}
 
-        /* Textos fora das caixas de entrada ficam brancos */
+        /* Textos e Rótulos */
         .stApp p, .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp label {{
             color: white !important;
         }}
 
-        /* FIX DOS BOTÕES: Força fundo verde e texto branco visível */
+        /* Botões com texto visível */
         .stButton > button {{
             background-color: #2a4e36 !important;
             color: #ffffff !important;
@@ -83,7 +83,7 @@ def carregar_configuracao_estilo(caminho_imagem):
             border-color: #ffffff !important;
         }}
 
-        /* FIX DAS CAIXAS DE SELEÇÃO: Garante texto escuro legível sobre fundo branco */
+        /* Força texto escuro e legível dentro das caixas de seleção */
         .stMultiSelect, .stSelectbox {{
             color: #000000 !important;
         }}
@@ -113,12 +113,12 @@ def carregar_configuracao_estilo(caminho_imagem):
     except Exception as e:
         st.warning(f"Não foi possível carregar o estilo de fundo: {e}")
 
-# Aplica a imagem de fundo
+# Aplica o estilo e fundo
 carregar_configuracao_estilo("fundo do maleiro.png")
 
 st.title("📊 Gerador de Mala Direta")
 
-# 1. Carrega a planilha base
+# Carregamento do arquivo Excel
 @st.cache_data
 def carregar_dados():
     return pd.read_excel("sua_planilha.xlsx")
@@ -127,14 +127,17 @@ try:
     df_original = carregar_dados()
     df_filtrado = df_original.copy()
 
-    # Identificação exata/flexível das colunas conforme sua planilha
-    coluna_filiacao = next((col for col in df_original.columns if any(k in col.lower() for k in ["filiad", "situa", "tipo", "membro"])), None)
-    coluna_uf = next((col for col in df_original.columns if col.lower() in ["uf", "estado", "sigla_uf", "sigla"]), None)
-    
-    # Busca por 'município', 'muncípio' ou 'cidade' ignorando diferenças de maiúsculas/minúsculas
-    coluna_municipio = next((col for col in df_original.columns if "munic" in col.lower() or "munc" in col.lower() or "cidade" in col.lower()), None)
+    # Mapeamento com indicação direta da Coluna H para Município
+    # Coluna H equivale ao índice 7 (pois a contagem no Python começa em 0)
+    if len(df_original.columns) >= 8:
+        coluna_municipio = df_original.columns[7]
+    else:
+        coluna_municipio = next((col for col in df_original.columns if "munic" in col.lower() or "cidade" in col.lower()), None)
 
-    # --- BARRA DE FILTROS (3 COLUNAS) ---
+    coluna_filiacao = next((col for col in df_original.columns if any(k in col.lower() for k in ["filiad", "situa", "tipo", "membro"]) and col != coluna_municipio), None)
+    coluna_uf = next((col for col in df_original.columns if col.lower() in ["uf", "estado", "sigla_uf", "sigla"]), None)
+
+    # --- BARRA DE FILTROS ---
     st.markdown('<div class="filter-header-badge">🔍 Consulta e Filtros</div>', unsafe_allow_html=True)
 
     c1, c2, c3 = st.columns([1, 1, 2])
@@ -157,7 +160,7 @@ try:
             if sel_uf != "Todas":
                 df_filtrado = df_filtrado[df_filtrado[coluna_uf].astype(str) == sel_uf]
 
-    # 3. Município(s)
+    # 3. Município(s) - Carregado diretamente da Coluna H
     with c3:
         st.markdown('<div class="filter-label-card">3. Município(s)</div>', unsafe_allow_html=True)
         if coluna_municipio:
@@ -170,8 +173,6 @@ try:
             )
             if sel_mun:
                 df_filtrado = df_filtrado[df_filtrado[coluna_municipio].astype(str).isin(sel_mun)]
-        else:
-            st.write("Coluna de Município não identificada na planilha")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -180,7 +181,7 @@ try:
     
     colunas_disponiveis = df_original.columns.tolist()
 
-    # Botões para marcar/desmarcar
+    # Botões de marcação rápida
     btn_col1, btn_col2, _ = st.columns([1.5, 1.5, 5])
     
     if "cols_selected" not in st.session_state:
