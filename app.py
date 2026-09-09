@@ -26,7 +26,7 @@ def validar_login():
     if usuario in USUARIOS_AUTORIZADOS and USUARIOS_AUTORIZADOS[usuario] == senha:
         st.session_state["autenticado"] = True
         st.session_state["usuario_logado"] = usuario
-        del st.session_state["input_password"]  # Limpa a senha da memória por segurança
+        del st.session_state["input_password"]
     else:
         st.session_state["autenticado"] = False
         st.error("⚠️ E-mail ou senha incorretos. Acesso negado.")
@@ -50,16 +50,14 @@ def tela_login():
 if "autenticado" not in st.session_state:
     st.session_state["autenticado"] = False
 
-# Se o usuário não estiver autenticado, encerra a execução aqui
 if not st.session_state["autenticado"]:
     tela_login()
     st.stop()
 
 # ==============================================================================
-# 🎨 ESTILIZAÇÃO E APLICAÇÃO PRINCIPAL (SÓ CARREGA APÓS LOGIN)
+# 🎨 ESTILIZAÇÃO E APLICAÇÃO PRINCIPAL
 # ==============================================================================
 
-# Função para aplicar a imagem de fundo e estilizar a interface
 def carregar_configuracao_estilo(caminho_imagem):
     try:
         with open(caminho_imagem, "rb") as image_file:
@@ -67,19 +65,16 @@ def carregar_configuracao_estilo(caminho_imagem):
         
         css_fundo_e_texto = f"""
         <style>
-        /* Header transparente */
         header[data-testid="stHeader"] {{
             background-color: transparent !important;
             z-index: 1;
         }}
         
-        /* Espaçamento do topo */
         .block-container {{
             padding-top: 6rem !important;
             padding-bottom: 2rem !important;
         }}
 
-        /* Customização para CENTRALIZAR e AUMENTAR O TÍTULO PRINCIPAL */
         .titulo-personalizado {{
             font-size: 2.5rem !important;
             font-weight: bold;
@@ -90,13 +85,11 @@ def carregar_configuracao_estilo(caminho_imagem):
             width: 100%;
         }}
 
-        /* Customização para alinhar a área do usuário logado no canto direito */
         .user-header-box {{
             margin-top: 140px !important;
             text-align: right;
         }}
 
-        /* Fundo customizado */
         .stApp {{
             background-image: url("data:image/png;base64,{encoded_string}");
             background-size: 100% auto;
@@ -106,7 +99,6 @@ def carregar_configuracao_estilo(caminho_imagem):
             background-color: #1a3323;
         }}
 
-        /* Badges de Título */
         .filter-header-badge {{
             background-color: #143621;
             color: #ffffff !important;
@@ -119,7 +111,6 @@ def carregar_configuracao_estilo(caminho_imagem):
             border: 1px solid #235234;
         }}
 
-        /* Etiqueta dos Filtros */
         .filter-label-card {{
             background-color: #2a4e36;
             color: #ffffff !important;
@@ -132,12 +123,10 @@ def carregar_configuracao_estilo(caminho_imagem):
             border: 1px solid #386646;
         }}
 
-        /* Textos e Rótulos gerais */
         .stApp p, .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp label {{
             color: white !important;
         }}
 
-        /* --- CORREÇÃO DO TEXTO DO EXPANDER --- */
         div[data-testid="stExpander"] {{
             background-color: #143621 !important;
             border: 1px solid #386646 !important;
@@ -149,7 +138,6 @@ def carregar_configuracao_estilo(caminho_imagem):
             color: #ffffff !important;
         }}
 
-        /* Botões com texto visível */
         .stButton > button {{
             background-color: #2a4e36 !important;
             color: #ffffff !important;
@@ -165,7 +153,6 @@ def carregar_configuracao_estilo(caminho_imagem):
             border-color: #ffffff !important;
         }}
 
-        /* Força texto escuro e legível dentro das caixas de seleção */
         .stMultiSelect, .stSelectbox {{
             color: #000000 !important;
         }}
@@ -174,7 +161,6 @@ def carregar_configuracao_estilo(caminho_imagem):
             color: #000000 !important;
         }}
 
-        /* Customização das tags verde escuro */
         span[data-baseweb="tag"],
         div[data-baseweb="tag"],
         span[class*="st-"] {{
@@ -194,7 +180,6 @@ def carregar_configuracao_estilo(caminho_imagem):
             color: #ffffff !important;
         }}
 
-        /* Botão de Download */
         div.stDownloadButton > button {{
             margin-top: 1rem;
             padding: 0.6rem 1.5rem !important;
@@ -215,14 +200,11 @@ def carregar_configuracao_estilo(caminho_imagem):
     except Exception as e:
         st.warning(f"Não foi possível carregar o estilo de fundo: {e}")
 
-# Aplica o estilo e fundo
 carregar_configuracao_estilo("fundo do maleiro.png")
 
-# Barra Superior com o título CENTRALIZADO e usuário logado à direita
 col_head1, col_head2, col_head3 = st.columns([2, 6, 2])
 
 with col_head2:
-    # Título centralizado na coluna do meio
     st.markdown('<div class="titulo-personalizado">📊 Gerador de Mala Direta</div>', unsafe_allow_html=True)
 
 with col_head3:
@@ -240,16 +222,27 @@ def carregar_dados():
 
 try:
     df_original = carregar_dados()
+    
+    # Remove espaços extras do início e do final dos nomes de todas as colunas
+    df_original.columns = [str(col).strip() for col in df_original.columns]
     df_filtrado = df_original.copy()
 
-    # Mapeamento exato pelo nome das colunas na planilha original
-    coluna_situacao = "Situação do Município" if "Situação do Município" in df_original.columns else (df_original.columns[2] if len(df_original.columns) > 2 else None)
-    coluna_porte = "Tipo" if "Tipo" in df_original.columns else (df_original.columns[1] if len(df_original.columns) > 1 else None)
-    coluna_ranking = "Ranking" if "Ranking" in df_original.columns else (df_original.columns[19] if len(df_original.columns) > 19 else None)
-    coluna_uf = "UF" if "UF" in df_original.columns else (df_original.columns[6] if len(df_original.columns) > 6 else None)
-    coluna_municipio = "Muncípio" if "Muncípio" in df_original.columns else ("Município" if "Município" in df_original.columns else (df_original.columns[7] if len(df_original.columns) > 7 else None))
+    # Função flexível para localizar o nome real da coluna na planilha (mesmo que haja variação no nome)
+    def encontrar_coluna(termos_busca):
+        for col in df_original.columns:
+            for termo in termos_busca:
+                if termo.lower() in col.lower():
+                    return col
+        return None
 
-    # Tratamento consistente da Coluna Ranking
+    # Mapeamento dinâmico buscando por termos conhecidos nas colunas da planilha (da A até a AZ)
+    coluna_porte = encontrar_coluna(["tipo", "porte"])
+    coluna_situacao = encontrar_coluna(["situação do município", "situacao do municipio", "situação", "situacao"])
+    coluna_uf = encontrar_coluna(["uf", "estado"])
+    coluna_municipio = encontrar_coluna(["muncípio", "município", "municipio"])
+    coluna_ranking = encontrar_coluna(["ranking"])
+
+    # Tratamento da Coluna Ranking
     def tratar_item_ranking(valor):
         if pd.isna(valor):
             return None
@@ -274,7 +267,6 @@ try:
         df_original[coluna_ranking] = df_original[coluna_ranking].apply(tratar_item_ranking)
         df_filtrado[coluna_ranking] = df_filtrado[coluna_ranking].apply(tratar_item_ranking)
 
-    # Elimina duplicidades formatando em Title Case
     def obter_opcoes_unicas(df, coluna):
         if not coluna or coluna not in df.columns:
             return ["Selecionar Todos"]
@@ -282,12 +274,12 @@ try:
         valores_formatados = sorted(list(set(v.title() for v in valores_brutos if v)))
         return ["Selecionar Todos"] + valores_formatados
 
-    # --- BARRA DE FILTROS (5 COLUNAS SEPARADAS) ---
+    # --- BARRA DE FILTROS ---
     st.markdown('<div class="filter-header-badge">🔍 Consulta e Filtros</div>', unsafe_allow_html=True)
 
     c1, c2, c3, c4, c5 = st.columns([1, 1, 1, 1, 1.2])
 
-    # 1. Situação (Filiação)
+    # 1. Situação
     with c1:
         st.markdown('<div class="filter-label-card">1. Situação (Filiação)</div>', unsafe_allow_html=True)
         if coluna_situacao and coluna_situacao in df_original.columns:
@@ -296,7 +288,7 @@ try:
             if sel_sit != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_situacao].astype(str).str.strip().str.upper() == str(sel_sit).strip().upper()]
 
-    # 2. Porte / Tipo (Capitais, etc.)
+    # 2. Porte (Tipo)
     with c2:
         st.markdown('<div class="filter-label-card">2. Porte</div>', unsafe_allow_html=True)
         if coluna_porte and coluna_porte in df_original.columns:
@@ -340,7 +332,6 @@ try:
     # --- SELEÇÃO DE COLUNAS PARA EXPORTAÇÃO ---
     st.markdown('<div class="filter-header-badge">📋 Seleção de Colunas para Exportação</div>', unsafe_allow_html=True)
     
-    # Bloco Informativo dos Tratamentos com texto em branco de alto contraste
     with st.expander("ℹ️ Entenda as colunas de Tratamento (Clique para expandir)"):
         st.markdown("""
         * **Tratamento 1**: Forma de vocativo formal direcionado à autoridade (ex: *Exmo(a). Sr(a).*).
@@ -350,7 +341,7 @@ try:
 
     colunas_dos_filtros = [c for c in [coluna_porte, coluna_situacao, coluna_uf, coluna_municipio, coluna_ranking] if c is not None]
     
-    # Filtra colunas dos filtros e também remove especificamente "Valor 2027"
+    # Seleciona todas as colunas da planilha (A até AZ), excluindo as usadas nos filtros e a coluna "Valor 2027"
     colunas_exportaveis = [
         col for col in df_original.columns 
         if col not in colunas_dos_filtros and str(col).strip().lower() != "valor 2027"
@@ -387,7 +378,6 @@ try:
         with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
             df_exportar.to_excel(writer, index=False, sheet_name='Mala Direta')
             
-            # Formatação visual do Excel gerado
             workbook = writer.book
             worksheet = writer.sheets['Mala Direta']
             
