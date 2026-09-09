@@ -81,7 +81,7 @@ def carregar_configuracao_estilo(caminho_imagem):
 
         /* Customização para CENTRALIZAR e AUMENTAR O TÍTULO PRINCIPAL */
         .titulo-personalizado {{
-            font-size: 2.5rem !important; /* TAMANHO DA FONTE AUMENTADO DE 1.8rem PARA 2.5rem */
+            font-size: 2.5rem !important;
             font-weight: bold;
             color: white !important;
             text-align: center !important;
@@ -349,7 +349,12 @@ try:
         """)
 
     colunas_dos_filtros = [c for c in [coluna_porte, coluna_situacao, coluna_uf, coluna_municipio, coluna_ranking] if c is not None]
-    colunas_exportaveis = [col for col in df_original.columns if col not in colunas_dos_filtros]
+    
+    # Filtra colunas dos filtros e também remove especificamente "Valor 2027"
+    colunas_exportaveis = [
+        col for col in df_original.columns 
+        if col not in colunas_dos_filtros and str(col).strip().lower() != "valor 2027"
+    ]
 
     if "ms_cols" not in st.session_state:
         st.session_state["ms_cols"] = colunas_exportaveis
