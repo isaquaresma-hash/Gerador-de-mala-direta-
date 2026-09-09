@@ -11,7 +11,6 @@ st.set_page_config(page_title="Gerador de Mala Direta", layout="wide")
 # ==============================================================================
 # 🔒 SISTEMA DE AUTENTICAÇÃO E CONTROLE DE ACESSO
 # ==============================================================================
-# Configure aqui os e-mails e senhas dos usuários autorizados:
 USUARIOS_AUTORIZADOS = {
     "sueli.rodrigues@fnp.org.br": "SenhaForte",
     "joao.oliveira@fnp.org.br": "SenhaForte",
@@ -60,7 +59,6 @@ if not st.session_state["autenticado"]:
 # 🎨 ESTILIZAÇÃO E APLICAÇÃO PRINCIPAL (SÓ CARREGA APÓS LOGIN)
 # ==============================================================================
 
-# Função para aplicar a imagem de fundo e estilizar a interface
 def carregar_configuracao_estilo(caminho_imagem):
     try:
         with open(caminho_imagem, "rb") as image_file:
@@ -76,8 +74,25 @@ def carregar_configuracao_estilo(caminho_imagem):
         
         /* Espaçamento do topo */
         .block-container {{
-            padding-top: 6rem !important;
+            padding-top: 5rem !important;
             padding-bottom: 2rem !important;
+        }}
+
+        /* TÍTULO CENTRALIZADO E REDUZIDO */
+        .titulo-personalizado {{
+            font-size: 2rem !important;
+            font-weight: bold;
+            color: white !important;
+            text-align: center !important;
+            margin-top: 130px !important;
+            margin-bottom: 15px !important;
+            width: 100%;
+            display: block;
+        }}
+
+        .user-header-box {{
+            margin-top: 130px !important;
+            text-align: right;
         }}
 
         /* Fundo customizado */
@@ -121,7 +136,7 @@ def carregar_configuracao_estilo(caminho_imagem):
             color: white !important;
         }}
 
-        /* --- CORREÇÃO DO TEXTO DO EXPANDER --- */
+        /* Expander */
         div[data-testid="stExpander"] {{
             background-color: #143621 !important;
             border: 1px solid #386646 !important;
@@ -133,7 +148,7 @@ def carregar_configuracao_estilo(caminho_imagem):
             color: #ffffff !important;
         }}
 
-        /* Botões com texto visível */
+        /* Botões */
         .stButton > button {{
             background-color: #2a4e36 !important;
             color: #ffffff !important;
@@ -149,7 +164,7 @@ def carregar_configuracao_estilo(caminho_imagem):
             border-color: #ffffff !important;
         }}
 
-        /* Força texto escuro e legível dentro das caixas de seleção */
+        /* Caixas de seleção */
         .stMultiSelect, .stSelectbox {{
             color: #000000 !important;
         }}
@@ -158,7 +173,7 @@ def carregar_configuracao_estilo(caminho_imagem):
             color: #000000 !important;
         }}
 
-        /* Customização das tags verde escuro */
+        /* Tags do multiselect */
         span[data-baseweb="tag"],
         div[data-baseweb="tag"],
         span[class*="st-"] {{
@@ -202,36 +217,52 @@ def carregar_configuracao_estilo(caminho_imagem):
 # Aplica o estilo e fundo
 carregar_configuracao_estilo("fundo do maleiro.png")
 
-# Barra Superior com o usuário logado e opção de Sair
-col_head1, col_head2 = st.columns([8, 2])
+# Layout de cabeçalho centralizado
+col_head1, col_head2, col_head3 = st.columns([2, 6, 2])
+
 with col_head1:
-    st.title("📊 Gerador de Mala Direta")
+    st.write("")  # Espaçador simétrico à esquerda
+
 with col_head2:
+    st.markdown('<div class="titulo-personalizado">📊 Gerador de Mala Direta</div>', unsafe_allow_html=True)
+
+with col_head3:
+    st.markdown('<div class="user-header-box">', unsafe_allow_html=True)
     st.write(f"👤 **{st.session_state.get('usuario_logado', '')}**")
     if st.button("🚪 Sair"):
         st.session_state["autenticado"] = False
         st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # Carregamento do arquivo Excel
 @st.cache_data
 def carregar_dados():
-    return pd.read_excel("sua_planilha.xlsx")
+    return pd.read_excel("sua_planilha.xlsx", header=0)
 
 try:
     df_original = carregar_dados()
+    
+    # Limpa espaços em branco dos nomes das colunas
+    df_original.columns = [str(col).strip() for col in df_original.columns]
     df_filtrado = df_original.copy()
 
-    # Mapeamento exato pelo nome das colunas na planilha original
+    # Mapeamento dinâmico das colunas
     coluna_situacao = "Situação do Município" if "Situação do Município" in df_original.columns else (df_original.columns[2] if len(df_original.columns) > 2 else None)
     coluna_porte = "Tipo" if "Tipo" in df_original.columns else (df_original.columns[1] if len(df_original.columns) > 1 else None)
     coluna_ranking = "Ranking" if "Ranking" in df_original.columns else (df_original.columns[19] if len(df_original.columns) > 19 else None)
     coluna_uf = "UF" if "UF" in df_original.columns else (df_original.columns[6] if len(df_original.columns) > 6 else None)
     coluna_municipio = "Muncípio" if "Muncípio" in df_original.columns else ("Município" if "Município" in df_original.columns else (df_original.columns[7] if len(df_original.columns) > 7 else None))
 
-    # Tratamento consistente da Coluna Ranking
+    # Função para normalizar comparações nos filtros
+    def normalizar(texto):
+        if pd.isna(texto):
+            return ""
+        return str(texto).strip().lower()
+
+    # Tratamento da Coluna Ranking
     def tratar_item_ranking(valor):
         if pd.isna(valor):
-            return None
+            return ""
         val_str = str(valor).strip()
         try:
             val_float = float(val_str.replace(',', '.'))
@@ -241,7 +272,7 @@ try:
                 return f"{int(round(val_float))}%"
         except ValueError:
             pass
-        return val_str.strip()
+        return val_str
 
     def chave_ordenacao_ranking(item):
         m = re.match(r"^(\d+)%$", str(item))
@@ -253,48 +284,47 @@ try:
         df_original[coluna_ranking] = df_original[coluna_ranking].apply(tratar_item_ranking)
         df_filtrado[coluna_ranking] = df_filtrado[coluna_ranking].apply(tratar_item_ranking)
 
-    # Elimina duplicidades formatando em Title Case
     def obter_opcoes_unicas(df, coluna):
         if not coluna or coluna not in df.columns:
             return ["Selecionar Todos"]
         valores_brutos = df[coluna].dropna().astype(str).str.strip().tolist()
-        valores_formatados = sorted(list(set(v.title() for v in valores_brutos if v)))
+        valores_formatados = sorted(list(set(v for v in valores_brutos if v)))
         return ["Selecionar Todos"] + valores_formatados
 
-    # --- BARRA DE FILTROS (5 COLUNAS SEPARADAS) ---
+    # --- BARRA DE FILTROS ---
     st.markdown('<div class="filter-header-badge">🔍 Consulta e Filtros</div>', unsafe_allow_html=True)
 
     c1, c2, c3, c4, c5 = st.columns([1, 1, 1, 1, 1.2])
 
-    # 1. Situação (Filiação)
+    # 1. Situação
     with c1:
         st.markdown('<div class="filter-label-card">1. Situação (Filiação)</div>', unsafe_allow_html=True)
         if coluna_situacao and coluna_situacao in df_original.columns:
             opcoes_sit = obter_opcoes_unicas(df_original, coluna_situacao)
             sel_sit = st.selectbox("Selecione a Situação:", options=opcoes_sit, key="sb_sit")
             if sel_sit != "Selecionar Todos":
-                df_filtrado = df_filtrado[df_filtrado[coluna_situacao].astype(str).str.strip().str.upper() == str(sel_sit).strip().upper()]
+                df_filtrado = df_filtrado[df_filtrado[coluna_situacao].apply(normalizar) == normalizar(sel_sit)]
 
-    # 2. Porte / Tipo (Capitais, etc.)
+    # 2. Porte
     with c2:
         st.markdown('<div class="filter-label-card">2. Porte</div>', unsafe_allow_html=True)
         if coluna_porte and coluna_porte in df_original.columns:
             opcoes_porte = obter_opcoes_unicas(df_original, coluna_porte)
             sel_porte = st.selectbox("Selecione o Porte:", options=opcoes_porte, key="sb_porte")
             if sel_porte != "Selecionar Todos":
-                df_filtrado = df_filtrado[df_filtrado[coluna_porte].astype(str).str.strip().str.upper() == str(sel_porte).strip().upper()]
+                df_filtrado = df_filtrado[df_filtrado[coluna_porte].apply(normalizar) == normalizar(sel_porte)]
 
     # 3. Ranking
     with c3:
         st.markdown('<div class="filter-label-card">3. Ranking</div>', unsafe_allow_html=True)
         if coluna_ranking and coluna_ranking in df_original.columns:
-            valores_ranking = df_original[coluna_ranking].dropna().unique().tolist()
+            valores_ranking = [v for v in df_original[coluna_ranking].dropna().unique().tolist() if str(v).strip()]
             valores_ordenados = sorted(valores_ranking, key=chave_ordenacao_ranking)
             opcoes_rank = ["Selecionar Todos"] + valores_ordenados
             
             sel_rank = st.selectbox("Selecione o Ranking:", options=opcoes_rank, key="sb_rank")
             if sel_rank != "Selecionar Todos":
-                df_filtrado = df_filtrado[df_filtrado[coluna_ranking] == sel_rank]
+                df_filtrado = df_filtrado[df_filtrado[coluna_ranking].apply(normalizar) == normalizar(sel_rank)]
 
     # 4. Estado (UF)
     with c4:
@@ -303,7 +333,7 @@ try:
             opcoes_uf = ["Selecionar Todos"] + sorted(df_original[coluna_uf].dropna().astype(str).str.strip().str.upper().unique().tolist())
             sel_uf = st.selectbox("Selecione a UF:", options=opcoes_uf, key="sb_uf")
             if sel_uf != "Selecionar Todos":
-                df_filtrado = df_filtrado[df_filtrado[coluna_uf].astype(str).str.strip().str.upper() == str(sel_uf).strip().upper()]
+                df_filtrado = df_filtrado[df_filtrado[coluna_uf].apply(normalizar) == normalizar(sel_uf)]
 
     # 5. Município
     with c5:
@@ -312,14 +342,13 @@ try:
             opcoes_mun = ["Selecionar Todos"] + sorted(df_filtrado[coluna_municipio].dropna().astype(str).str.strip().unique().tolist())
             sel_mun = st.selectbox("Escolha o Município:", options=opcoes_mun, key="sb_mun")
             if sel_mun != "Selecionar Todos":
-                df_filtrado = df_filtrado[df_filtrado[coluna_municipio].astype(str).str.strip().str.upper() == str(sel_mun).strip().upper()]
+                df_filtrado = df_filtrado[df_filtrado[coluna_municipio].apply(normalizar) == normalizar(sel_mun)]
 
     st.markdown("<br>", unsafe_allow_html=True)
 
     # --- SELEÇÃO DE COLUNAS PARA EXPORTAÇÃO ---
     st.markdown('<div class="filter-header-badge">📋 Seleção de Colunas para Exportação</div>', unsafe_allow_html=True)
     
-    # Bloco Informativo dos Tratamentos com texto em branco de alto contraste
     with st.expander("ℹ️ Entenda as colunas de Tratamento (Clique para expandir)"):
         st.markdown("""
         * **Tratamento 1**: Forma de vocativo formal direcionado à autoridade (ex: *Exmo(a). Sr(a).*).
@@ -327,8 +356,7 @@ try:
         * **Tratamento 3**: Formato de pronome direto/saudação personalizada usada para correspondência da Mala Direta (ex: *Prefeito(a)* / *Senhor(a) Prefeito(a)*).
         """)
 
-    colunas_dos_filtros = [c for c in [coluna_porte, coluna_situacao, coluna_uf, coluna_municipio, coluna_ranking] if c is not None]
-    colunas_exportaveis = [col for col in df_original.columns if col not in colunas_dos_filtros]
+    colunas_exportaveis = [col for col in df_original.columns if "valor 2027" not in str(col).strip().lower()]
 
     if "ms_cols" not in st.session_state:
         st.session_state["ms_cols"] = colunas_exportaveis
@@ -348,27 +376,25 @@ try:
     colunas_selecionadas = st.multiselect(
         "Escolha as colunas desejadas para compor o Excel:",
         options=colunas_exportaveis,
+        default=st.session_state["ms_cols"],
         key="ms_cols"
     )
 
-    colunas_identificacao = [c for c in [coluna_porte, coluna_situacao, coluna_uf, coluna_municipio, coluna_ranking] if c in df_original.columns]
-    colunas_finais_ordenadas = [col for col in df_original.columns if (col in colunas_identificacao or col in colunas_selecionadas)]
-
-    if colunas_finais_ordenadas:
-        df_exportar = df_filtrado[colunas_finais_ordenadas]
+    # --- PROCESSAMENTO E EXPORTAÇÃO ---
+    if colunas_selecionadas and len(df_filtrado) > 0:
+        df_exportar = df_filtrado[colunas_selecionadas]
 
         buffer = BytesIO()
         with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
             df_exportar.to_excel(writer, index=False, sheet_name='Mala Direta')
             
-            # Formatação visual do Excel gerado
             workbook = writer.book
             worksheet = writer.sheets['Mala Direta']
             
             header_fill = PatternFill(start_color="143621", end_color="143621", fill_type="solid")
             header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
             
-            for col_num, col_name in enumerate(colunas_finais_ordenadas, 1):
+            for col_num, col_name in enumerate(colunas_selecionadas, 1):
                 cell = worksheet.cell(row=1, column=col_num)
                 cell.fill = header_fill
                 cell.font = header_font
@@ -381,6 +407,8 @@ try:
             file_name="mala_direta_personalizada.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
+    elif len(df_filtrado) == 0:
+        st.error("⚠️ Nenhuma linha encontrada para a combinação de filtros selecionada. Redefina alguns filtros para 'Selecionar Todos'.")
     else:
         st.warning("Selecione ao menos uma coluna no campo acima para habilitar o download.")
 
