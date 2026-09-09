@@ -212,7 +212,7 @@ try:
     coluna_uf = "UF" if "UF" in df_original.columns else (df_original.columns[6] if len(df_original.columns) > 6 else None)
     coluna_municipio = "Muncípio" if "Muncípio" in df_original.columns else ("Município" if "Município" in df_original.columns else (df_original.columns[7] if len(df_original.columns) > 7 else None))
 
-    # Guardando lista de colunas vitais de consulta/filtro
+    # Guardando lista de colunas vitais de consulta/filtro (essas SEMPRE irão para o Excel final)
     colunas_principais_filtros = [col for col in [coluna_situacao, coluna_porte, coluna_ranking, coluna_uf, coluna_municipio] if col and col in df_original.columns]
 
     def normalizar(texto):
@@ -316,9 +316,14 @@ try:
         * **Tratamento 3**: Formato de pronome direto/saudação personalizada usada para correspondência da Mala Direta (ex: *Prefeito(a)* / *Senhor(a) Prefeito(a)*).
         """)
 
+    # Nomes das colunas a ocultar da caixa de seleção do multiselect
+    colunas_para_remover_do_multiselect = [col.lower() for col in colunas_principais_filtros]
+
+    # Filtra colunas exportáveis removendo "valor 2027" e as 5 colunas de filtros
     colunas_exportaveis = [
         col for col in df_original.columns 
-        if "valor 2027" not in str(col).strip().lower()
+        if "valor 2027" not in str(col).strip().lower() 
+        and str(col).strip().lower() not in colunas_para_remover_do_multiselect
     ]
 
     if "ms_cols" not in st.session_state:
@@ -345,10 +350,10 @@ try:
     )
 
     # --- PROCESSAMENTO E EXPORTAÇÃO ---
-    # Junta as 5 colunas de filtro principais + as colunas escolhidas no multiselect
+    # Garante a inclusão automática das 5 colunas dos filtros principais + colunas marcadas pelo usuário
     conjunto_colunas = set(colunas_selecionadas).union(set(colunas_principais_filtros))
     
-    # Preserva a ordem original exata da planilha
+    # Preserva a ordem original exata das colunas na planilha
     todas_colunas_finais = [c for c in df_original.columns if c in conjunto_colunas]
 
     if todas_colunas_finais and len(df_filtrado) > 0:
