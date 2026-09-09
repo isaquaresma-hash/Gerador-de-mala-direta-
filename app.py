@@ -149,6 +149,7 @@ def carregar_configuracao_estilo(caminho_imagem):
         
         .stButton > button:hover {{
             background-color: #143621 !important;
+            color: #ffffff !important;
             border-color: #ffffff !important;
         }}
 
@@ -217,16 +218,16 @@ with col_head3:
 # Carregamento do arquivo Excel
 @st.cache_data
 def carregar_dados():
-    return pd.read_excel("sua_planilha.xlsx")
+    return pd.read_excel("sua_planilha.xlsx", header=0)
 
 try:
     df_original = carregar_dados()
     
-    # Limpa espaços extras no nome das colunas
+    # Limpa espaços extras nos nomes das colunas
     df_original.columns = [str(col).strip() for col in df_original.columns]
     df_filtrado = df_original.copy()
 
-    # Mapeamento EXATO das colunas conforme suas imagens capturadas do Excel
+    # Mapeamento dinâmico das colunas de filtro
     coluna_porte = "Tipo" if "Tipo" in df_original.columns else None
     coluna_situacao = "Situação do Município" if "Situação do Município" in df_original.columns else None
     coluna_uf = "UF" if "UF" in df_original.columns else None
@@ -270,7 +271,7 @@ try:
 
     c1, c2, c3, c4, c5 = st.columns([1, 1, 1, 1, 1.2])
 
-    # 1. Situação (Filiação)
+    # 1. Situação
     with c1:
         st.markdown('<div class="filter-label-card">1. Situação (Filiação)</div>', unsafe_allow_html=True)
         if coluna_situacao and coluna_situacao in df_original.columns:
@@ -279,7 +280,7 @@ try:
             if sel_sit != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_situacao].astype(str).str.strip().str.upper() == str(sel_sit).strip().upper()]
 
-    # 2. Porte (Tipo)
+    # 2. Porte
     with c2:
         st.markdown('<div class="filter-label-card">2. Porte</div>', unsafe_allow_html=True)
         if coluna_porte and coluna_porte in df_original.columns:
@@ -330,12 +331,10 @@ try:
         * **Tratamento 3**: Formato de pronome direto/saudação personalizada usada para correspondência da Mala Direta (ex: *Prefeito(a)* / *Senhor(a) Prefeito(a)*).
         """)
 
-    colunas_dos_filtros = [c for c in [coluna_porte, coluna_situacao, coluna_uf, coluna_municipio, coluna_ranking] if c is not None]
-    
-    # Exclui colunas utilizadas como filtro e ignora qualquer variação da coluna "Valor 2027"
+    # Todas as colunas disponíveis da planilha original, apenas excluindo "Valor 2027"
     colunas_exportaveis = [
         col for col in df_original.columns 
-        if col not in colunas_dos_filtros and "valor 2027" not in str(col).strip().lower()
+        if "valor 2027" not in str(col).strip().lower()
     ]
 
     if "ms_cols" not in st.session_state:
@@ -356,14 +355,13 @@ try:
     colunas_selecionadas = st.multiselect(
         "Escolha as colunas desejadas para compor o Excel:",
         options=colunas_exportaveis,
+        default=st.session_state["ms_cols"],
         key="ms_cols"
     )
 
-    colunas_identificacao = [c for c in [coluna_porte, coluna_situacao, coluna_uf, coluna_municipio, coluna_ranking] if c and c in df_original.columns]
-    colunas_finais_ordenadas = [col for col in df_original.columns if (col in colunas_identificacao or col in colunas_selecionadas)]
-
-    if colunas_finais_ordenadas:
-        df_exportar = df_filtrado[colunas_finais_ordenadas]
+    if colunas_selecionadas:
+        # Garante a exportação direta das linhas filtradas com as colunas selecionadas
+        df_exportar = df_filtrado[colunas_selecionadas]
 
         buffer = BytesIO()
         with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
@@ -375,7 +373,7 @@ try:
             header_fill = PatternFill(start_color="143621", end_color="143621", fill_type="solid")
             header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
             
-            for col_num, col_name in enumerate(colunas_finais_ordenadas, 1):
+            for col_num, col_name in enumerate(colunas_selecionadas, 1):
                 cell = worksheet.cell(row=1, column=col_num)
                 cell.fill = header_fill
                 cell.font = header_font
