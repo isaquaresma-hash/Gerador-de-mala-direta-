@@ -67,7 +67,7 @@ def carregar_configuracao_estilo(caminho_imagem):
             color: white !important;
         }}
 
-        /* ESTILIZAÇÃO DOS BOTÕES (Corrigindo o problema do botão branco) */
+        /* FIX DOS BOTÕES: Força fundo verde e texto branco visível */
         .stButton > button {{
             background-color: #2a4e36 !important;
             color: #ffffff !important;
@@ -83,7 +83,7 @@ def carregar_configuracao_estilo(caminho_imagem):
             border-color: #ffffff !important;
         }}
 
-        /* Corrigindo a visibilidade dentro das caixas de seleção (multiselect e selectbox) */
+        /* FIX DAS CAIXAS DE SELEÇÃO: Garante texto escuro legível sobre fundo branco */
         .stMultiSelect, .stSelectbox {{
             color: #000000 !important;
         }}
@@ -127,10 +127,12 @@ try:
     df_original = carregar_dados()
     df_filtrado = df_original.copy()
 
-    # Identificação flexível de colunas
+    # Identificação exata/flexível das colunas conforme sua planilha
     coluna_filiacao = next((col for col in df_original.columns if any(k in col.lower() for k in ["filiad", "situa", "tipo", "membro"])), None)
     coluna_uf = next((col for col in df_original.columns if col.lower() in ["uf", "estado", "sigla_uf", "sigla"]), None)
-    coluna_municipio = next((col for col in df_original.columns if any(k in col.lower() for k in ["muncip", "municip", "cidade"])), None)
+    
+    # Busca por 'município', 'muncípio' ou 'cidade' ignorando diferenças de maiúsculas/minúsculas
+    coluna_municipio = next((col for col in df_original.columns if "munic" in col.lower() or "munc" in col.lower() or "cidade" in col.lower()), None)
 
     # --- BARRA DE FILTROS (3 COLUNAS) ---
     st.markdown('<div class="filter-header-badge">🔍 Consulta e Filtros</div>', unsafe_allow_html=True)
@@ -145,8 +147,6 @@ try:
             sel_filiacao = st.selectbox("Selecione a Filiação:", options=opcoes_filiacao, key="sb_fil")
             if sel_filiacao != "Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_filiacao].astype(str) == sel_filiacao]
-        else:
-            st.write("Coluna não encontrada")
 
     # 2. Estado (UF)
     with c2:
@@ -156,10 +156,8 @@ try:
             sel_uf = st.selectbox("Selecione a UF:", options=opcoes_uf, key="sb_uf")
             if sel_uf != "Todas":
                 df_filtrado = df_filtrado[df_filtrado[coluna_uf].astype(str) == sel_uf]
-        else:
-            st.write("Coluna não encontrada")
 
-    # 3. Município (Exibe todos da base ou os filtrados pela UF selecionada)
+    # 3. Município(s)
     with c3:
         st.markdown('<div class="filter-label-card">3. Município(s)</div>', unsafe_allow_html=True)
         if coluna_municipio:
@@ -182,7 +180,7 @@ try:
     
     colunas_disponiveis = df_original.columns.tolist()
 
-    # Botões estilizados e visíveis
+    # Botões para marcar/desmarcar
     btn_col1, btn_col2, _ = st.columns([1.5, 1.5, 5])
     
     if "cols_selected" not in st.session_state:
