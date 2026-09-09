@@ -64,9 +64,21 @@ def carregar_configuracao_estilo(caminho_imagem):
             border: 1px solid #386646;
         }}
 
-        /* Textos e Rótulos */
+        /* Textos e Rótulos gerais */
         .stApp p, .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp label {{
             color: white !important;
+        }}
+
+        /* --- CORREÇÃO DO TEXTO DO EXPANDER --- */
+        div[data-testid="stExpander"] {{
+            background-color: #143621 !important;
+            border: 1px solid #386646 !important;
+            border-radius: 6px !important;
+            color: #ffffff !important;
+        }}
+        
+        div[data-testid="stExpander"] * {{
+            color: #ffffff !important;
         }}
 
         /* Botões com texto visível */
@@ -181,12 +193,11 @@ try:
         df_original[coluna_ranking] = df_original[coluna_ranking].apply(tratar_item_ranking)
         df_filtrado[coluna_ranking] = df_filtrado[coluna_ranking].apply(tratar_item_ranking)
 
-    # Função atualizada para eliminar duplicidades ignorando maiúsculas/minúsculas
+    # Elimina duplicidades formatando em Title Case
     def obter_opcoes_unicas(df, coluna):
         if not coluna or coluna not in df.columns:
             return ["Selecionar Todos"]
         valores_brutos = df[coluna].dropna().astype(str).str.strip().tolist()
-        # Converte para Title Case (ex: "filiado" -> "Filiado") para remover duplicados
         valores_formatados = sorted(list(set(v.title() for v in valores_brutos if v)))
         return ["Selecionar Todos"] + valores_formatados
 
@@ -248,7 +259,7 @@ try:
     # --- SELEÇÃO DE COLUNAS PARA EXPORTAÇÃO ---
     st.markdown('<div class="filter-header-badge">📋 Seleção de Colunas para Exportação</div>', unsafe_allow_html=True)
     
-    # Bloco Informativo dos Tratamentos
+    # Bloco Informativo dos Tratamentos com texto em branco de alto contraste
     with st.expander("ℹ️ Entenda as colunas de Tratamento (Clique para expandir)"):
         st.markdown("""
         * **Tratamento 1**: Forma de vocativo formal direcionado à autoridade (ex: *Exmo(a). Sr(a).*).
