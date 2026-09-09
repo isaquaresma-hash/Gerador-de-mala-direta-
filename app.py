@@ -8,6 +8,57 @@ from openpyxl.styles import PatternFill, Font
 # Configuração da página do Streamlit em largura total
 st.set_page_config(page_title="Gerador de Mala Direta", layout="wide")
 
+# ==============================================================================
+# 🔒 SISTEMA DE AUTENTICAÇÃO E CONTROLE DE ACESSO
+# ==============================================================================
+# Configure aqui os e-mails e senhas dos usuários autorizados:
+USUARIOS_AUTORIZADOS = {
+    "admin@empresa.com.br": "SenhaForte123!",
+    "usuario1@empresa.com.br": "MalaDireta2026*",
+    "usuario2@empresa.com.br": "AcessoPermitido@9"
+}
+
+def validar_login():
+    """Valida o e-mail e a senha digitados."""
+    usuario = st.session_state.get("input_email", "").strip().lower()
+    senha = st.session_state.get("input_password", "")
+
+    if usuario in USUARIOS_AUTORIZADOS and USUARIOS_AUTORIZADOS[usuario] == senha:
+        st.session_state["autenticado"] = True
+        st.session_state["usuario_logado"] = usuario
+        del st.session_state["input_password"]  # Limpa a senha da memória por segurança
+    else:
+        st.session_state["autenticado"] = False
+        st.error("⚠️ E-mail ou senha incorretos. Acesso negado.")
+
+def tela_login():
+    """Desenha o formulário de login centralizado."""
+    col1, col2, col3 = st.columns([1, 1.5, 1])
+    with col2:
+        st.markdown("""
+        <div style="background-color: #143621; padding: 25px; border-radius: 10px; border: 1px solid #386646; margin-top: 50px;">
+            <h2 style="color: white; text-align: center; margin-bottom: 15px;">🔒 Acesso Restrito</h2>
+            <p style="color: white; text-align: center; font-size: 14px;">Esta aplicação contém dados sensíveis. Por favor, identifique-se para continuar.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.text_input("E-mail corporativo:", key="input_email")
+        st.text_input("Senha:", type="password", key="input_password")
+        st.button("Entrar no Sistema", on_click=validar_login, use_container_width=True)
+
+# Controle de sessão do usuário
+if "autenticado" not in st.session_state:
+    st.session_state["autenticado"] = False
+
+# Se o usuário não estiver autenticado, encerra a execução aqui
+if not st.session_state["autenticado"]:
+    tela_login()
+    st.stop()
+
+# ==============================================================================
+# 🎨 ESTILIZAÇÃO E APLICAÇÃO PRINCIPAL (SÓ CARREGA APÓS LOGIN)
+# ==============================================================================
+
 # Função para aplicar a imagem de fundo e estilizar a interface
 def carregar_configuracao_estilo(caminho_imagem):
     try:
@@ -24,7 +75,7 @@ def carregar_configuracao_estilo(caminho_imagem):
         
         /* Espaçamento do topo */
         .block-container {{
-            padding-top: 10rem !important;
+            padding-top: 6rem !important;
             padding-bottom: 2rem !important;
         }}
 
@@ -150,7 +201,15 @@ def carregar_configuracao_estilo(caminho_imagem):
 # Aplica o estilo e fundo
 carregar_configuracao_estilo("fundo do maleiro.png")
 
-st.title("📊 Gerador de Mala Direta")
+# Barra Superior com o usuário logado e opção de Sair
+col_head1, col_head2 = st.columns([8, 2])
+with col_head1:
+    st.title("📊 Gerador de Mala Direta")
+with col_head2:
+    st.write(f"👤 **{st.session_state.get('usuario_logado', '')}**")
+    if st.button("🚪 Sair"):
+        st.session_state["autenticado"] = False
+        st.rerun()
 
 # Carregamento do arquivo Excel
 @st.cache_data
