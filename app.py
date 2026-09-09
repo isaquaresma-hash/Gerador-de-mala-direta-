@@ -216,6 +216,13 @@ try:
             return ""
         return str(texto).strip().lower()
 
+    def obter_opcoes_limpas(df, coluna):
+        if not coluna or coluna not in df.columns:
+            return ["Selecionar Todos"]
+        valores_brutos = df[coluna].dropna().astype(str).str.strip().tolist()
+        valores_formatados = sorted(list(set(v.title() for v in valores_brutos if v)))
+        return ["Selecionar Todos"] + valores_formatados
+
     def tratar_item_ranking(valor):
         if pd.isna(valor):
             return ""
@@ -250,16 +257,16 @@ try:
     with c1:
         st.markdown('<div class="filter-label-card">1. Situação (Filiação)</div>', unsafe_allow_html=True)
         if coluna_situacao and coluna_situacao in df_original.columns:
-            opcoes_sit = ["Selecionar Todos"] + sorted([v for v in df_filtrado[coluna_situacao].dropna().astype(str).str.strip().unique().tolist() if v])
+            opcoes_sit = obter_opcoes_limpas(df_filtrado, coluna_situacao)
             sel_sit = st.selectbox("Selecione a Situação:", options=opcoes_sit, key="sb_sit")
             if sel_sit != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_situacao].apply(normalizar) == normalizar(sel_sit)]
 
-    # 2. Porte (baseado no resultado da Situação)
+    # 2. Porte
     with c2:
         st.markdown('<div class="filter-label-card">2. Porte</div>', unsafe_allow_html=True)
         if coluna_porte and coluna_porte in df_original.columns:
-            opcoes_porte = ["Selecionar Todos"] + sorted([v for v in df_filtrado[coluna_porte].dropna().astype(str).str.strip().unique().tolist() if v])
+            opcoes_porte = obter_opcoes_limpas(df_filtrado, coluna_porte)
             sel_porte = st.selectbox("Selecione o Porte:", options=opcoes_porte, key="sb_porte")
             if sel_porte != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_porte].apply(normalizar) == normalizar(sel_porte)]
@@ -305,7 +312,15 @@ try:
         * **Tratamento 3**: Formato de pronome direto/saudação personalizada usada para correspondência da Mala Direta (ex: *Prefeito(a)* / *Senhor(a) Prefeito(a)*).
         """)
 
-    colunas_exportaveis = [col for col in df_original.columns if "valor 2027" not in str(col).strip().lower()]
+    # Lista de colunas a serem ignoradas na exportação
+    colunas_ignoradas = ["região", "tipo", "situação do município", "uf", "muncípio", "município"]
+
+    # Filtro que remove "valor 2027" e as colunas solicitadas
+    colunas_exportaveis = [
+        col for col in df_original.columns 
+        if "valor 2027" not in str(col).strip().lower() 
+        and str(col).strip().lower() not in colunas_ignoradas
+    ]
 
     if "ms_cols" not in st.session_state:
         st.session_state["ms_cols"] = colunas_exportaveis
