@@ -253,6 +253,7 @@ try:
     c1, c2, c3, c4, c5 = st.columns([1, 1, 1, 1, 1.2])
 
     df_filtrado = df_original.copy()
+    colunas_dos_filtros_usados = []
 
     # 1. Situação
     with c1:
@@ -262,6 +263,7 @@ try:
             sel_sit = st.selectbox("Selecione a Situação:", options=opcoes_sit, key="sb_sit")
             if sel_sit != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_situacao].apply(normalizar) == normalizar(sel_sit)]
+                colunas_dos_filtros_usados.append(coluna_situacao)
 
     # 2. Porte
     with c2:
@@ -271,6 +273,7 @@ try:
             sel_porte = st.selectbox("Selecione o Porte:", options=opcoes_porte, key="sb_porte")
             if sel_porte != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_porte].apply(normalizar) == normalizar(sel_porte)]
+                colunas_dos_filtros_usados.append(coluna_porte)
 
     # 3. Ranking
     with c3:
@@ -282,6 +285,7 @@ try:
             sel_rank = st.selectbox("Selecione o Ranking:", options=opcoes_rank, key="sb_rank")
             if sel_rank != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_ranking].apply(normalizar) == normalizar(sel_rank)]
+                colunas_dos_filtros_usados.append(coluna_ranking)
 
     # 4. Estado (UF)
     with c4:
@@ -291,6 +295,7 @@ try:
             sel_uf = st.selectbox("Selecione a UF:", options=opcoes_uf, key="sb_uf")
             if sel_uf != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_uf].apply(normalizar) == normalizar(sel_uf)]
+                colunas_dos_filtros_usados.append(coluna_uf)
 
     # 5. Município
     with c5:
@@ -300,6 +305,7 @@ try:
             sel_mun = st.selectbox("Escolha o Município:", options=opcoes_mun, key="sb_mun")
             if sel_mun != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_municipio].apply(normalizar) == normalizar(sel_mun)]
+                colunas_dos_filtros_usados.append(coluna_municipio)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -313,7 +319,6 @@ try:
         * **Tratamento 3**: Formato de pronome direto/saudação personalizada usada para correspondência da Mala Direta (ex: *Prefeito(a)* / *Senhor(a) Prefeito(a)*).
         """)
 
-    # Filtro que remove apenas "valor 2027" se existir na planilha (libera as colunas de filtros para seleção)
     colunas_exportaveis = [
         col for col in df_original.columns 
         if "valor 2027" not in str(col).strip().lower()
@@ -343,8 +348,17 @@ try:
     )
 
     # --- PROCESSAMENTO E EXPORTAÇÃO ---
-    if colunas_selecionadas and len(df_filtrado) > 0:
-        df_exportar = df_filtrado[colunas_selecionadas]
+    # Junta as colunas que você selecionou com as colunas que você filtrou no topo (evitando colunas duplicadas)
+    todas_colunas_finais = list(colunas_selecionadas)
+    for col_f in colunas_dos_filtros_usados:
+        if col_f not in todas_colunas_finais:
+            todas_colunas_finais.append(col_f)
+
+    # Reordena conforme a ordem original da planilha para manter tudo organizado
+    todas_colunas_finais = [c for c in df_original.columns if c in todas_colunas_finais]
+
+    if todas_colunas_finais and len(df_filtrado) > 0:
+        df_exportar = df_filtrado[todas_colunas_finais]
 
         buffer = BytesIO()
         with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
@@ -356,7 +370,7 @@ try:
             header_fill = PatternFill(start_color="143621", end_color="143621", fill_type="solid")
             header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
             
-            for col_num, col_name in enumerate(colunas_selecionadas, 1):
+            for col_num, col_name in enumerate(todas_colunas_finais, 1):
                 cell = worksheet.cell(row=1, column=col_num)
                 cell.fill = header_fill
                 cell.font = header_font
