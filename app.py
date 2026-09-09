@@ -148,7 +148,7 @@ try:
     df_original = carregar_dados()
     df_filtrado = df_original.copy()
 
-    # Mapeamento exato pelo nome das colunas
+    # Mapeamento exato pelo nome das colunas na planilha original
     coluna_situacao = "Situação do Município" if "Situação do Município" in df_original.columns else (df_original.columns[2] if len(df_original.columns) > 2 else None)
     coluna_porte = "Tipo" if "Tipo" in df_original.columns else (df_original.columns[1] if len(df_original.columns) > 1 else None)
     coluna_ranking = "Ranking" if "Ranking" in df_original.columns else (df_original.columns[19] if len(df_original.columns) > 19 else None)
@@ -183,22 +183,22 @@ try:
     def obter_opcoes_unicas(df, coluna):
         if not coluna or coluna not in df.columns:
             return ["Selecionar Todos"]
-        valores = df[coluna].dropna().astype(str).str.strip().str.title().unique()
-        return ["Selecionar Todos"] + sorted(valores.tolist())
+        valores = df[coluna].dropna().astype(str).str.strip().unique()
+        return ["Selecionar Todos"] + sorted(list(set(valores)))
 
     # --- BARRA DE FILTROS (5 COLUNAS SEPARADAS) ---
     st.markdown('<div class="filter-header-badge">🔍 Consulta e Filtros</div>', unsafe_allow_html=True)
 
     c1, c2, c3, c4, c5 = st.columns([1, 1, 1, 1, 1.2])
 
-    # 1. Situação (Filiado / Não Filiado)
+    # 1. Situação (Filiação)
     with c1:
         st.markdown('<div class="filter-label-card">1. Situação (Filiação)</div>', unsafe_allow_html=True)
         if coluna_situacao and coluna_situacao in df_original.columns:
             opcoes_sit = obter_opcoes_unicas(df_original, coluna_situacao)
             sel_sit = st.selectbox("Selecione a Situação:", options=opcoes_sit, key="sb_sit")
             if sel_sit != "Selecionar Todos":
-                df_filtrado = df_filtrado[df_filtrado[coluna_situacao].astype(str).str.strip().str.title() == sel_sit]
+                df_filtrado = df_filtrado[df_filtrado[coluna_situacao].astype(str).str.strip().str.upper() == str(sel_sit).strip().upper()]
 
     # 2. Porte / Tipo
     with c2:
@@ -207,7 +207,7 @@ try:
             opcoes_porte = obter_opcoes_unicas(df_original, coluna_porte)
             sel_porte = st.selectbox("Selecione o Porte:", options=opcoes_porte, key="sb_porte")
             if sel_porte != "Selecionar Todos":
-                df_filtrado = df_filtrado[df_filtrado[coluna_porte].astype(str).str.strip().str.title() == sel_porte]
+                df_filtrado = df_filtrado[df_filtrado[coluna_porte].astype(str).str.strip().str.upper() == str(sel_porte).strip().upper()]
 
     # 3. Ranking
     with c3:
@@ -228,7 +228,7 @@ try:
             opcoes_uf = ["Selecionar Todos"] + sorted(df_filtrado[coluna_uf].dropna().astype(str).str.strip().str.upper().unique().tolist())
             sel_uf = st.selectbox("Selecione a UF:", options=opcoes_uf, key="sb_uf")
             if sel_uf != "Selecionar Todos":
-                df_filtrado = df_filtrado[df_filtrado[coluna_uf].astype(str).str.strip().str.upper() == sel_uf]
+                df_filtrado = df_filtrado[df_filtrado[coluna_uf].astype(str).str.strip().str.upper() == str(sel_uf).strip().upper()]
 
     # 5. Município
     with c5:
@@ -237,7 +237,7 @@ try:
             opcoes_mun = ["Selecionar Todos"] + sorted(df_filtrado[coluna_municipio].dropna().astype(str).str.strip().unique().tolist())
             sel_mun = st.selectbox("Escolha o Município:", options=opcoes_mun, key="sb_mun")
             if sel_mun != "Selecionar Todos":
-                df_filtrado = df_filtrado[df_filtrado[coluna_municipio].astype(str).str.strip() == sel_mun]
+                df_filtrado = df_filtrado[df_filtrado[coluna_municipio].astype(str).str.strip().str.upper() == str(sel_mun).strip().upper()]
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -269,7 +269,7 @@ try:
     )
 
     if colunas_selecionadas:
-        # Pega as linhas que correspondem ao filtro (ex: Filiados) e as colunas escolhidas no Multiselect
+        # Aplica a seleção de colunas sobre o DataFrame FILTRADO pelas buscas acima
         df_exportar = df_filtrado[colunas_selecionadas]
 
         buffer = BytesIO()
