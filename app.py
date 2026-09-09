@@ -149,7 +149,6 @@ def carregar_configuracao_estilo(caminho_imagem):
         
         .stButton > button:hover {{
             background-color: #143621 !important;
-            color: #ffffff !important;
             border-color: #ffffff !important;
         }}
 
@@ -223,26 +222,18 @@ def carregar_dados():
 try:
     df_original = carregar_dados()
     
-    # Remove espaços extras do início e do final dos nomes de todas as colunas
+    # Limpa espaços extras no nome das colunas
     df_original.columns = [str(col).strip() for col in df_original.columns]
     df_filtrado = df_original.copy()
 
-    # Função flexível para localizar o nome real da coluna na planilha (mesmo que haja variação no nome)
-    def encontrar_coluna(termos_busca):
-        for col in df_original.columns:
-            for termo in termos_busca:
-                if termo.lower() in col.lower():
-                    return col
-        return None
+    # Mapeamento EXATO das colunas conforme suas imagens capturadas do Excel
+    coluna_porte = "Tipo" if "Tipo" in df_original.columns else None
+    coluna_situacao = "Situação do Município" if "Situação do Município" in df_original.columns else None
+    coluna_uf = "UF" if "UF" in df_original.columns else None
+    coluna_municipio = "Muncípio" if "Muncípio" in df_original.columns else ("Município" if "Município" in df_original.columns else None)
+    coluna_ranking = "Ranking" if "Ranking" in df_original.columns else None
 
-    # Mapeamento dinâmico buscando por termos conhecidos nas colunas da planilha (da A até a AZ)
-    coluna_porte = encontrar_coluna(["tipo", "porte"])
-    coluna_situacao = encontrar_coluna(["situação do município", "situacao do municipio", "situação", "situacao"])
-    coluna_uf = encontrar_coluna(["uf", "estado"])
-    coluna_municipio = encontrar_coluna(["muncípio", "município", "municipio"])
-    coluna_ranking = encontrar_coluna(["ranking"])
-
-    # Tratamento da Coluna Ranking
+    # Função de tratamento e ordenação da coluna Ranking
     def tratar_item_ranking(valor):
         if pd.isna(valor):
             return None
@@ -279,7 +270,7 @@ try:
 
     c1, c2, c3, c4, c5 = st.columns([1, 1, 1, 1, 1.2])
 
-    # 1. Situação
+    # 1. Situação (Filiação)
     with c1:
         st.markdown('<div class="filter-label-card">1. Situação (Filiação)</div>', unsafe_allow_html=True)
         if coluna_situacao and coluna_situacao in df_original.columns:
@@ -301,7 +292,7 @@ try:
     with c3:
         st.markdown('<div class="filter-label-card">3. Ranking</div>', unsafe_allow_html=True)
         if coluna_ranking and coluna_ranking in df_original.columns:
-            valores_ranking = df_original[coluna_ranking].dropna().unique().tolist()
+            valores_ranking = [v for v in df_original[coluna_ranking].dropna().unique().tolist() if str(v).strip()]
             valores_ordenados = sorted(valores_ranking, key=chave_ordenacao_ranking)
             opcoes_rank = ["Selecionar Todos"] + valores_ordenados
             
@@ -341,10 +332,10 @@ try:
 
     colunas_dos_filtros = [c for c in [coluna_porte, coluna_situacao, coluna_uf, coluna_municipio, coluna_ranking] if c is not None]
     
-    # Seleciona todas as colunas da planilha (A até AZ), excluindo as usadas nos filtros e a coluna "Valor 2027"
+    # Exclui colunas utilizadas como filtro e ignora qualquer variação da coluna "Valor 2027"
     colunas_exportaveis = [
         col for col in df_original.columns 
-        if col not in colunas_dos_filtros and str(col).strip().lower() != "valor 2027"
+        if col not in colunas_dos_filtros and "valor 2027" not in str(col).strip().lower()
     ]
 
     if "ms_cols" not in st.session_state:
@@ -368,7 +359,7 @@ try:
         key="ms_cols"
     )
 
-    colunas_identificacao = [c for c in [coluna_porte, coluna_situacao, coluna_uf, coluna_municipio, coluna_ranking] if c in df_original.columns]
+    colunas_identificacao = [c for c in [coluna_porte, coluna_situacao, coluna_uf, coluna_municipio, coluna_ranking] if c and c in df_original.columns]
     colunas_finais_ordenadas = [col for col in df_original.columns if (col in colunas_identificacao or col in colunas_selecionadas)]
 
     if colunas_finais_ordenadas:
@@ -401,4 +392,4 @@ try:
         st.warning("Selecione ao menos uma coluna no campo acima para habilitar o download.")
 
 except Exception as e:
-    st.error(f"Erro ao processar a planilha. Verifique o arquivo Excel enviado. Detalhes: {e}")
+    st.error(f"Erro ao processar a planilha. Verifique se o arquivo 'sua_planilha.xlsx' está na pasta raiz. Detalhes: {e}")
