@@ -313,14 +313,10 @@ try:
         * **Tratamento 3**: Formato de pronome direto/saudação personalizada usada para correspondência da Mala Direta (ex: *Prefeito(a)* / *Senhor(a) Prefeito(a)*).
         """)
 
-    # Lista de colunas a serem ignoradas na exportação
-    colunas_ignoradas = ["região", "tipo", "situação do município", "uf", "muncípio", "município"]
-
-    # Filtro que remove "valor 2027" e as colunas solicitadas
+    # Filtro que remove apenas "valor 2027" se existir na planilha (libera as colunas de filtros para seleção)
     colunas_exportaveis = [
         col for col in df_original.columns 
-        if "valor 2027" not in str(col).strip().lower() 
-        and str(col).strip().lower() not in colunas_ignoradas
+        if "valor 2027" not in str(col).strip().lower()
     ]
 
     if "ms_cols" not in st.session_state:
