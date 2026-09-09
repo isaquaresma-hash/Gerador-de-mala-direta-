@@ -55,7 +55,7 @@ def carregar_configuracao_estilo(caminho_imagem):
         }}
 
         /* Mantém o texto dentro do campo de seleção visível/escuro */
-        .stApp .stMultiSelect {{
+        .stApp .stMultiSelect, .stApp .stSelectbox {{
             color: initial !important;
         }}
         
@@ -80,17 +80,63 @@ st.title("📊 Gerador de Mala Direta")
 # 1. Carrega o banco de dados diretamente do repositório
 @st.cache_data
 def carregar_dados():
-    # Substitua pelo nome exato do seu arquivo Excel no GitHub
+    # Certifique-se de que o nome da planilha corresponde ao arquivo no seu repositório
     return pd.read_excel("sua_planilha.xlsx")
 
 try:
-    df = carregar_dados()
+    df_original = carregar_dados()
     st.success("Banco de dados carregado com sucesso!")
 
-    # 2. Transforma as colunas da planilha em opções de seleção
-    colunas_disponiveis = df.columns.tolist()
+    df_filtrado = df_original.copy()
+
+    # --- BLOCO DE FILTROS ---
+    st.subheader("🎯 Filtros de Seleção de Dados")
+    col1, col2, col3 = st.columns(3)
+
+    # 1. Filtro de Filiação (ajuste os nomes das colunas conforme sua planilha)
+    # Supondo que exista uma coluna 'Filiado' ou 'Situação' (ex: Sim/Não ou Filiado/Não Filiado)
+    coluna_filiacao = next((col for col in df_original.columns if "filiad" in col.lower() or "situa" in col.lower()), None)
     
-    st.subheader("Selecione as informações desejadas:")
+    with col1:
+        if coluna_filiacao:
+            opcao_filiacao = st.radio(
+                "Status de Filiação:",
+                options=["Todos", "Filiados", "Não Filiados"]
+            )
+            if opcao_filiacao == "Filiados":
+                # Aceita valores como 'Sim', 'Filiado', True, etc.
+                df_filtrado = df_filtrado[df_filtrado[coluna_filiacao].astype(str).str.lower().str.contains("sim|filiado|true|1")]
+            elif opcao_filiacao == "Não Filiados":
+                df_filtrado = df_filtrado[df_filtrado[coluna_filiacao].astype(str).str.lower().str.contains("não|nao|não filiado|nao filiado|false|0")]
+        else:
+            st.info("Coluna de filiação não identificada automaticamente.")
+
+    # 2. Filtro de UF (Estado)
+    coluna_uf = next((col for col in df_original.columns if col.lower() in ["uf", "estado", "sigla_uf"]), None)
+    
+    with col2:
+        if coluna_uf:
+            ufs_disponiveis = sorted(df_filtrado[coluna_uf].dropna().astype(str).unique().tolist())
+            ufs_selecionadas = st.multiselect("Selecione a(s) UF(s):", options=ufs_disponiveis)
+            if ufs_selecionadas:
+                df_filtrado = df_filtrado[df_filtrado[coluna_uf].astype(str).isin(ufs_selecionadas)]
+
+    # 3. Filtro de Município
+    coluna_municipio = next((col for col in df_original.columns if "municip" in col.lower() or "cidade" in col.lower()), None)
+    
+    with col3:
+        if coluna_municipio:
+            muns_disponiveis = sorted(df_filtrado[coluna_municipio].dropna().astype(str).unique().tolist())
+            muns_selecionados = st.multiselect("Selecione o(s) Município(s):", options=muns_disponiveis)
+            if muns_selecionados:
+                df_filtrado = df_filtrado[df_filtrado[coluna_municipio].astype(str).isin(muns_selecionados)]
+
+    st.markdown("---")
+
+    # --- SELEÇÃO DE COLUNAS ---
+    st.subheader("📋 Seleção de Colunas para a Mala Direta")
+    colunas_disponiveis = df_original.columns.tolist()
+    
     colunas_selecionadas = st.multiselect(
         "Escolha as colunas para compor a nova planilha:",
         options=colunas_disponiveis,
@@ -98,14 +144,14 @@ try:
     )
 
     if colunas_selecionadas:
-        # Filtra a planilha base com as colunas escolhidas
-        df_filtrado = df[colunas_selecionadas]
+        df_exportar = df_filtrado[colunas_selecionadas]
 
-        # 3. Prepara o arquivo Excel para download direto (sem pré-visualização)
+        # 3. Prepara o arquivo Excel para download direto
         buffer = BytesIO()
         with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-            df_filtrado.to_excel(writer, index=False, sheet_name='Mala Direta')
+            df_exportar.to_excel(writer, index=False, sheet_name='Mala Direta')
         
+        st.write(f"Total de registros encontrados: **{len(df_exportar)}**")
         st.download_button(
             label="📥 Baixar Mala Direta (.xlsx)",
             data=buffer.getvalue(),
