@@ -15,8 +15,8 @@ st.set_page_config(page_title="Gerador de Mala Direta", layout="wide")
 USUARIOS_AUTORIZADOS = {
     "sueli.rodrigues@fnp.org.br": "SenhaForte",
     "joao.oliveira@fnp.org.br": "SenhaForte",
-    "isa.quaresma@fnp.org.br": "SenhaForte"
-     "jailma.sousa@fnp.org.br": "SenhaForte"
+    "isa.quaresma@fnp.org.br": "SenhaForte",
+    "jailma.sousa@fnp.org.br": "SenhaForte"
 }
 
 def validar_login():
