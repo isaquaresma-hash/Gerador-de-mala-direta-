@@ -93,6 +93,22 @@ def carregar_configuracao_estilo(caminho_imagem):
             color: #000000 !important;
         }}
 
+        /* Customização dos balões de seleção do Multiselect (substitui o vermelho por verde escuro) */
+        span[data-baseweb="tag"] {{
+            background-color: #2a4e36 !important;
+            border: 1px solid #386646 !important;
+            border-radius: 4px !important;
+        }}
+        
+        span[data-baseweb="tag"] span {{
+            color: #ffffff !important;
+        }}
+
+        /* Ícone de fechar "x" da tag */
+        span[data-baseweb="tag"] svg {{
+            fill: #ffffff !important;
+        }}
+
         /* Botão de Download */
         div.stDownloadButton > button {{
             margin-top: 1rem;
@@ -135,7 +151,7 @@ try:
     coluna_municipio = df_original.columns[7] if len(df_original.columns) > 7 else None    # Coluna H
     coluna_ranking = df_original.columns[19] if len(df_original.columns) > 19 else None    # Coluna T
 
-    # Função para tratar e normalizar os valores da coluna Ranking
+    # Tratamento da Coluna Ranking (T)
     def tratar_item_ranking(valor):
         if pd.isna(valor):
             return None
@@ -150,23 +166,21 @@ try:
             pass
         return val_str.capitalize()
 
-    # Função para ordenação personalizada: % em ordem crescente, seguidos por textos
     def chave_ordenacao_ranking(item):
         m = re.match(r"^(\d+)%$", item)
         if m:
             return (0, int(m.group(1)))
         return (1, item)
 
-    # Aplicação do tratamento para a Coluna T
     if coluna_ranking:
         df_original["_ranking_tratado"] = df_original[coluna_ranking].apply(tratar_item_ranking)
         df_filtrado["_ranking_tratado"] = df_filtrado[coluna_ranking].apply(tratar_item_ranking)
 
-    # Função para limpar e capitalizar textos simples
+    # Função auxiliar para extrair opções únicas
     def obter_opcoes_unicas(df, coluna):
         if not coluna or coluna not in df.columns:
             return ["Selecionar Todos"]
-        valores = df[coluna].dropna().astype(str).str.strip().str.capitalize().unique()
+        valores = df[coluna].dropna().astype(str).str.strip().str.title().unique()
         return ["Selecionar Todos"] + sorted(valores.tolist())
 
     # --- BARRA DE FILTROS (5 COLUNAS SEPARADAS) ---
@@ -181,16 +195,16 @@ try:
             opcoes_sit = obter_opcoes_unicas(df_original, coluna_situacao)
             sel_sit = st.selectbox("Selecione a Situação:", options=opcoes_sit, key="sb_sit")
             if sel_sit != "Selecionar Todos":
-                df_filtrado = df_filtrado[df_filtrado[coluna_situacao].astype(str).str.strip().str.capitalize() == sel_sit]
+                df_filtrado = df_filtrado[df_filtrado[coluna_situacao].astype(str).str.strip().str.title() == sel_sit]
 
     # 2. Porte (Coluna B)
     with c2:
         st.markdown('<div class="filter-label-card">2. Porte</div>', unsafe_allow_html=True)
         if coluna_porte:
-            opcoes_porte = obter_opcoes_unicas(df_filtrado, coluna_porte)
+            opcoes_porte = obter_opcoes_unicas(df_original, coluna_porte)
             sel_porte = st.selectbox("Selecione o Porte:", options=opcoes_porte, key="sb_porte")
             if sel_porte != "Selecionar Todos":
-                df_filtrado = df_filtrado[df_filtrado[coluna_porte].astype(str).str.strip().str.capitalize() == sel_porte]
+                df_filtrado = df_filtrado[df_filtrado[coluna_porte].astype(str).str.strip().str.title() == sel_porte]
 
     # 3. Estado / UF (Coluna G)
     with c3:
