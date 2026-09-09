@@ -79,12 +79,12 @@ def carregar_configuracao_estilo(caminho_imagem):
             padding-bottom: 2rem !important;
         }}
 
-        /* Customização para CENTRALIZAR e REPOSICIONAR O TÍTULO PRINCIPAL */
+        /* Customização para CENTRALIZAR e AUMENTAR O TÍTULO PRINCIPAL */
         .titulo-personalizado {{
-            font-size: 1.8rem !important;
+            font-size: 2.5rem !important; /* TAMANHO DA FONTE AUMENTADO DE 1.8rem PARA 2.5rem */
             font-weight: bold;
             color: white !important;
-            text-align: center !important; /* CENTRALIZADO AQUI */
+            text-align: center !important;
             margin-top: 140px !important;
             margin-bottom: 15px !important;
             width: 100%;
