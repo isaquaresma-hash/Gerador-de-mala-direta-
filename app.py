@@ -84,13 +84,13 @@ def carregar_configuracao_estilo(caminho_imagem):
             font-size: 1.8rem !important; /* Tamanho menor da fonte */
             font-weight: bold;
             color: white !important;
-            margin-top: 100px !important;  /* Desceu mais (de 60px para 100px) */
+            margin-top: 140px !important;  /* Desceu mais (de 100px para 140px) */
             margin-bottom: 15px !important;
         }}
 
         /* Customização para alinhar a área do usuário logado */
         .user-header-box {{
-            margin-top: 100px !important;  /* Alinhado com o título */
+            margin-top: 140px !important;  /* Alinhado com o título */
         }}
 
         /* Fundo customizado */
@@ -218,7 +218,7 @@ carregar_configuracao_estilo("fundo do maleiro.png")
 # Barra Superior com o título ajustado e usuário logado
 col_head1, col_head2 = st.columns([8, 2])
 with col_head1:
-    # Título personalizado ajustado para 100px de distância do topo
+    # Título personalizado ajustado para 140px de distância do topo
     st.markdown('<div class="titulo-personalizado">📊 Gerador de Mala Direta</div>', unsafe_allow_html=True)
 with col_head2:
     st.markdown('<div class="user-header-box">', unsafe_allow_html=True)
