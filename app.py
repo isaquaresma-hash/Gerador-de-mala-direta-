@@ -93,7 +93,7 @@ def carregar_configuracao_estilo(caminho_imagem):
             color: #000000 !important;
         }}
 
-        /* Substituição da cor das tags do Multiselect por verde escuro */
+        /* Customização das tags verde escuro */
         span[data-baseweb="tag"],
         div[data-baseweb="tag"],
         span[class*="st-"] {{
@@ -102,13 +102,11 @@ def carregar_configuracao_estilo(caminho_imagem):
             border-radius: 4px !important;
         }}
         
-        /* Cor do texto interno das tags */
         span[data-baseweb="tag"] span,
         div[data-baseweb="tag"] span {{
             color: #ffffff !important;
         }}
 
-        /* Ícone 'x' para remover a tag */
         span[data-baseweb="tag"] svg,
         div[data-baseweb="tag"] svg {{
             fill: #ffffff !important;
@@ -150,14 +148,14 @@ try:
     df_original = carregar_dados()
     df_filtrado = df_original.copy()
 
-    # Mapeamento pelas Posições das Colunas na Planilha:
-    coluna_porte = df_original.columns[1] if len(df_original.columns) > 1 else None        # Tipo (Coluna B)
-    coluna_situacao = df_original.columns[2] if len(df_original.columns) > 2 else None     # Situação do Município (Coluna C)
-    coluna_uf = df_original.columns[6] if len(df_original.columns) > 6 else None           # UF (Coluna G)
-    coluna_municipio = df_original.columns[7] if len(df_original.columns) > 7 else None    # Município (Coluna H)
-    coluna_ranking = df_original.columns[19] if len(df_original.columns) > 19 else None    # Ranking (Coluna T)
+    # Mapeamento exato pelo nome das colunas
+    coluna_situacao = "Situação do Município" if "Situação do Município" in df_original.columns else (df_original.columns[2] if len(df_original.columns) > 2 else None)
+    coluna_porte = "Tipo" if "Tipo" in df_original.columns else (df_original.columns[1] if len(df_original.columns) > 1 else None)
+    coluna_ranking = "Ranking" if "Ranking" in df_original.columns else (df_original.columns[19] if len(df_original.columns) > 19 else None)
+    coluna_uf = "UF" if "UF" in df_original.columns else (df_original.columns[6] if len(df_original.columns) > 6 else None)
+    coluna_municipio = "Muncípio" if "Muncípio" in df_original.columns else ("Município" if "Município" in df_original.columns else (df_original.columns[7] if len(df_original.columns) > 7 else None))
 
-    # Tratamento da Coluna Ranking (T)
+    # Tratamento da Coluna Ranking
     def tratar_item_ranking(valor):
         if pd.isna(valor):
             return None
@@ -178,11 +176,10 @@ try:
             return (0, int(m.group(1)))
         return (1, item)
 
-    if coluna_ranking:
+    if coluna_ranking and coluna_ranking in df_original.columns:
         df_original["_ranking_tratado"] = df_original[coluna_ranking].apply(tratar_item_ranking)
         df_filtrado["_ranking_tratado"] = df_filtrado[coluna_ranking].apply(tratar_item_ranking)
 
-    # Função auxiliar para extrair opções únicas
     def obter_opcoes_unicas(df, coluna):
         if not coluna or coluna not in df.columns:
             return ["Selecionar Todos"]
@@ -194,28 +191,28 @@ try:
 
     c1, c2, c3, c4, c5 = st.columns([1, 1, 1, 1, 1.2])
 
-    # 1. Situação / Filiação (Coluna C)
+    # 1. Situação
     with c1:
         st.markdown('<div class="filter-label-card">1. Situação (Filiação)</div>', unsafe_allow_html=True)
-        if coluna_situacao:
+        if coluna_situacao and coluna_situacao in df_original.columns:
             opcoes_sit = obter_opcoes_unicas(df_original, coluna_situacao)
             sel_sit = st.selectbox("Selecione a Situação:", options=opcoes_sit, key="sb_sit")
             if sel_sit != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_situacao].astype(str).str.strip().str.title() == sel_sit]
 
-    # 2. Porte (Coluna B)
+    # 2. Porte / Tipo
     with c2:
         st.markdown('<div class="filter-label-card">2. Porte</div>', unsafe_allow_html=True)
-        if coluna_porte:
+        if coluna_porte and coluna_porte in df_original.columns:
             opcoes_porte = obter_opcoes_unicas(df_original, coluna_porte)
             sel_porte = st.selectbox("Selecione o Porte:", options=opcoes_porte, key="sb_porte")
             if sel_porte != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_porte].astype(str).str.strip().str.title() == sel_porte]
 
-    # 3. Ranking (Coluna T)
+    # 3. Ranking
     with c3:
         st.markdown('<div class="filter-label-card">3. Ranking</div>', unsafe_allow_html=True)
-        if coluna_ranking:
+        if coluna_ranking and "_ranking_tratado" in df_filtrado.columns:
             valores_ranking = df_filtrado["_ranking_tratado"].dropna().unique().tolist()
             valores_ordenados = sorted(valores_ranking, key=chave_ordenacao_ranking)
             opcoes_rank = ["Selecionar Todos"] + valores_ordenados
@@ -224,19 +221,19 @@ try:
             if sel_rank != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado["_ranking_tratado"] == sel_rank]
 
-    # 4. Estado / UF (Coluna G)
+    # 4. Estado (UF)
     with c4:
         st.markdown('<div class="filter-label-card">4. Estado (UF)</div>', unsafe_allow_html=True)
-        if coluna_uf:
+        if coluna_uf and coluna_uf in df_original.columns:
             opcoes_uf = ["Selecionar Todos"] + sorted(df_filtrado[coluna_uf].dropna().astype(str).str.strip().str.upper().unique().tolist())
             sel_uf = st.selectbox("Selecione a UF:", options=opcoes_uf, key="sb_uf")
             if sel_uf != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_uf].astype(str).str.strip().str.upper() == sel_uf]
 
-    # 5. Município(s) (Coluna H)
+    # 5. Município
     with c5:
         st.markdown('<div class="filter-label-card">5. Município(s)</div>', unsafe_allow_html=True)
-        if coluna_municipio:
+        if coluna_municipio and coluna_municipio in df_original.columns:
             opcoes_mun = ["Selecionar Todos"] + sorted(df_filtrado[coluna_municipio].dropna().astype(str).str.strip().unique().tolist())
             sel_mun = st.selectbox("Escolha o Município:", options=opcoes_mun, key="sb_mun")
             if sel_mun != "Selecionar Todos":
@@ -247,27 +244,22 @@ try:
     # --- SELEÇÃO DE COLUNAS PARA EXPORTAÇÃO ---
     st.markdown('<div class="filter-header-badge">📋 Seleção de Colunas para Exportação</div>', unsafe_allow_html=True)
     
-    colunas_disponiveis = df_original.columns.tolist()
-    if "_ranking_tratado" in colunas_disponiveis:
-        colunas_disponiveis.remove("_ranking_tratado")
+    # Define as colunas que pertencem estritamente aos filtros
+    colunas_dos_filtros = [coluna_porte, coluna_situacao, coluna_uf, coluna_municipio, coluna_ranking, "_ranking_tratado"]
+    
+    # Cria a lista de opções do Multiselect EXCLUINDO totalmente as colunas dos filtros
+    colunas_exportaveis = [col for col in df_original.columns if col not in colunas_dos_filtros]
 
-    # Identifica e remove as colunas dos filtros do seletor padrão inicial
-    colunas_dos_filtros = [coluna_porte, coluna_situacao, coluna_uf, coluna_municipio, coluna_ranking]
-    colunas_dos_filtros = [c for c in colunas_dos_filtros if c in colunas_disponiveis]
-
-    # Padrão inicial: todas as colunas exceto as dos filtros superiores
-    colunas_padrao_iniciais = [c for c in colunas_disponiveis if c not in colunas_dos_filtros]
-
-    # Inicialização do estado da chave do multiselect
+    # Inicialização da chave no session state apenas com as colunas permitidas
     if "ms_cols" not in st.session_state:
-        st.session_state["ms_cols"] = colunas_padrao_iniciais
+        st.session_state["ms_cols"] = colunas_exportaveis
 
     # Botões de marcação rápida
     btn_col1, btn_col2, _ = st.columns([1.5, 1.5, 5])
 
     with btn_col1:
         if st.button("Marcar Todas"):
-            st.session_state["ms_cols"] = colunas_disponiveis
+            st.session_state["ms_cols"] = colunas_exportaveis
             st.rerun()
 
     with btn_col2:
@@ -277,7 +269,7 @@ try:
 
     colunas_selecionadas = st.multiselect(
         "Escolha as colunas desejadas para compor o Excel:",
-        options=colunas_disponiveis,
+        options=colunas_exportaveis,
         key="ms_cols"
     )
 
@@ -300,4 +292,4 @@ try:
         st.warning("Selecione ao menos uma coluna no campo acima para habilitar o download.")
 
 except Exception as e:
-    st.error(f"Erro ao carregar a planilha. Certifique-se de que o arquivo Excel enviado para o GitHub tem o mesmo nome configurado no código. Detalhes: {e}")
+    st.error(f"Erro ao processar a planilha. Verifique o arquivo Excel enviado. Detalhes: {e}")
