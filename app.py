@@ -13,9 +13,10 @@ st.set_page_config(page_title="Gerador de Mala Direta", layout="wide")
 # ==============================================================================
 # Configure aqui os e-mails e senhas dos usuários autorizados:
 USUARIOS_AUTORIZADOS = {
-    "admin@empresa.com.br": "SenhaForte123!",
-    "usuario1@empresa.com.br": "MalaDireta2026*",
-    "usuario2@empresa.com.br": "AcessoPermitido@9"
+    "sueli.rodrigues@fnp.org.br": "SenhaForte",
+    "joao.oliveira@fnp.org.br": "SenhaForte",
+    "isa.quaresma@fnp.org.br": "SenhaForte"
+     "jailma.sousa@fnp.org.br": "SenhaForte"
 }
 
 def validar_login():
