@@ -138,23 +138,23 @@ try:
 
     c1, c2, c3, c4 = st.columns([1, 1, 1, 1.5])
 
-    # 1. Porte (Coluna B)
+    # 1. Situação / Filiação (Coluna C)
     with c1:
-        st.markdown('<div class="filter-label-card">1. Porte</div>', unsafe_allow_html=True)
-        if coluna_porte:
-            opcoes_porte = ["Selecionar Todos"] + sorted(df_original[coluna_porte].dropna().astype(str).unique().tolist())
-            sel_porte = st.selectbox("Selecione o Porte:", options=opcoes_porte, key="sb_porte")
-            if sel_porte != "Selecionar Todos":
-                df_filtrado = df_filtrado[df_filtrado[coluna_porte].astype(str) == sel_porte]
-
-    # 2. Situação / Filiação (Coluna C)
-    with c2:
-        st.markdown('<div class="filter-label-card">2. Situação (Filiação)</div>', unsafe_allow_html=True)
+        st.markdown('<div class="filter-label-card">1. Situação (Filiação)</div>', unsafe_allow_html=True)
         if coluna_situacao:
-            opcoes_sit = ["Selecionar Todos"] + sorted(df_filtrado[coluna_situacao].dropna().astype(str).unique().tolist())
+            opcoes_sit = ["Selecionar Todos"] + sorted(df_original[coluna_situacao].dropna().astype(str).unique().tolist())
             sel_sit = st.selectbox("Selecione a Situação:", options=opcoes_sit, key="sb_sit")
             if sel_sit != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_situacao].astype(str) == sel_sit]
+
+    # 2. Porte (Coluna B)
+    with c2:
+        st.markdown('<div class="filter-label-card">2. Porte</div>', unsafe_allow_html=True)
+        if coluna_porte:
+            opcoes_porte = ["Selecionar Todos"] + sorted(df_filtrado[coluna_porte].dropna().astype(str).unique().tolist())
+            sel_porte = st.selectbox("Selecione o Porte:", options=opcoes_porte, key="sb_porte")
+            if sel_porte != "Selecionar Todos":
+                df_filtrado = df_filtrado[df_filtrado[coluna_porte].astype(str) == sel_porte]
 
     # 3. Estado / UF (Coluna G)
     with c3:
