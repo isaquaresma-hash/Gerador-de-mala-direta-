@@ -11,7 +11,6 @@ st.set_page_config(page_title="Gerador de Mala Direta", layout="wide")
 # ==============================================================================
 # 🔒 SISTEMA DE AUTENTICAÇÃO E CONTROLE DE ACESSO
 # ==============================================================================
-# Configure aqui os e-mails e senhas dos usuários autorizados:
 USUARIOS_AUTORIZADOS = {
     "sueli.rodrigues@fnp.org.br": "SenhaForte",
     "joao.oliveira@fnp.org.br": "SenhaForte",
@@ -78,6 +77,20 @@ def carregar_configuracao_estilo(caminho_imagem):
         .block-container {{
             padding-top: 6rem !important;
             padding-bottom: 2rem !important;
+        }}
+
+        /* Customização para diminuir e reposicionar o Título Principal */
+        .titulo-personalizado {{
+            font-size: 1.8rem !important; /* Tamanho menor da fonte */
+            font-weight: bold;
+            color: white !important;
+            margin-top: 25px !important;  /* Empurra o título para baixo */
+            margin-bottom: 10px !important;
+        }}
+
+        /* Customização para alinhar a área do usuário logado */
+        .user-header-box {{
+            margin-top: 25px !important;
         }}
 
         /* Fundo customizado */
@@ -202,15 +215,18 @@ def carregar_configuracao_estilo(caminho_imagem):
 # Aplica o estilo e fundo
 carregar_configuracao_estilo("fundo do maleiro.png")
 
-# Barra Superior com o usuário logado e opção de Sair
+# Barra Superior com o título ajustado e usuário logado
 col_head1, col_head2 = st.columns([8, 2])
 with col_head1:
-    st.title("📊 Gerador de Mala Direta")
+    # Título personalizado (menor e deslocado para baixo)
+    st.markdown('<div class="titulo-personalizado">📊 Gerador de Mala Direta</div>', unsafe_allow_html=True)
 with col_head2:
+    st.markdown('<div class="user-header-box">', unsafe_allow_html=True)
     st.write(f"👤 **{st.session_state.get('usuario_logado', '')}**")
     if st.button("🚪 Sair"):
         st.session_state["autenticado"] = False
         st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # Carregamento do arquivo Excel
 @st.cache_data
@@ -382,7 +398,7 @@ try:
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
     else:
-        st.warning("Selecione ao menos uma coluna no campo acima para habilitar o download.")
+        st.warning("Selecione ao menos uma coluna no campo acima para habilitar do download.")
 
 except Exception as e:
     st.error(f"Erro ao processar a planilha. Verifique o arquivo Excel enviado. Detalhes: {e}")
