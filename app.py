@@ -26,7 +26,7 @@ def validar_login():
     if usuario in USUARIOS_AUTORIZADOS and USUARIOS_AUTORIZADOS[usuario] == senha:
         st.session_state["autenticado"] = True
         st.session_state["usuario_logado"] = usuario
-        del st.session_state["input_password"]  # Limpa a senha da memória por segurança
+        del st.session_state["input_password"]  # Limpa a senha por segurança
     else:
         st.session_state["autenticado"] = False
         st.error("⚠️ E-mail ou senha incorretos. Acesso negado.")
@@ -50,13 +50,12 @@ def tela_login():
 if "autenticado" not in st.session_state:
     st.session_state["autenticado"] = False
 
-# Se o usuário não estiver autenticado, encerra a execução aqui
 if not st.session_state["autenticado"]:
     tela_login()
     st.stop()
 
 # ==============================================================================
-# 🎨 ESTILIZAÇÃO E APLICAÇÃO PRINCIPAL (SÓ CARREGA APÓS LOGIN)
+# 🎨 ESTILIZAÇÃO E APLICAÇÃO PRINCIPAL
 # ==============================================================================
 
 def carregar_configuracao_estilo(caminho_imagem):
@@ -66,19 +65,14 @@ def carregar_configuracao_estilo(caminho_imagem):
         
         css_fundo_e_texto = f"""
         <style>
-        /* Header transparente */
         header[data-testid="stHeader"] {{
             background-color: transparent !important;
             z-index: 1;
         }}
-        
-        /* Espaçamento do topo */
         .block-container {{
             padding-top: 5rem !important;
             padding-bottom: 2rem !important;
         }}
-
-        /* TÍTULO CENTRALIZADO E REDUZIDO */
         .titulo-personalizado {{
             font-size: 2rem !important;
             font-weight: bold;
@@ -89,13 +83,10 @@ def carregar_configuracao_estilo(caminho_imagem):
             width: 100%;
             display: block;
         }}
-
         .user-header-box {{
             margin-top: 130px !important;
             text-align: right;
         }}
-
-        /* Fundo customizado */
         .stApp {{
             background-image: url("data:image/png;base64,{encoded_string}");
             background-size: 100% auto;
@@ -104,8 +95,6 @@ def carregar_configuracao_estilo(caminho_imagem):
             background-attachment: fixed;
             background-color: #1a3323;
         }}
-
-        /* Badges de Título */
         .filter-header-badge {{
             background-color: #143621;
             color: #ffffff !important;
@@ -117,8 +106,6 @@ def carregar_configuracao_estilo(caminho_imagem):
             margin-bottom: 12px;
             border: 1px solid #235234;
         }}
-
-        /* Etiqueta dos Filtros */
         .filter-label-card {{
             background-color: #2a4e36;
             color: #ffffff !important;
@@ -130,25 +117,18 @@ def carregar_configuracao_estilo(caminho_imagem):
             margin-bottom: 0px;
             border: 1px solid #386646;
         }}
-
-        /* Textos e Rótulos gerais */
         .stApp p, .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp label {{
             color: white !important;
         }}
-
-        /* Expander */
         div[data-testid="stExpander"] {{
             background-color: #143621 !important;
             border: 1px solid #386646 !important;
             border-radius: 6px !important;
             color: #ffffff !important;
         }}
-        
         div[data-testid="stExpander"] * {{
             color: #ffffff !important;
         }}
-
-        /* Botões */
         .stButton > button {{
             background-color: #2a4e36 !important;
             color: #ffffff !important;
@@ -157,43 +137,29 @@ def carregar_configuracao_estilo(caminho_imagem):
             font-weight: bold !important;
             padding: 0.4rem 1rem !important;
         }}
-        
         .stButton > button:hover {{
             background-color: #143621 !important;
             color: #ffffff !important;
             border-color: #ffffff !important;
         }}
-
-        /* Caixas de seleção */
         .stMultiSelect, .stSelectbox {{
             color: #000000 !important;
         }}
-        
         div[data-baseweb="select"] span {{
             color: #000000 !important;
         }}
-
-        /* Tags do multiselect */
-        span[data-baseweb="tag"],
-        div[data-baseweb="tag"],
-        span[class*="st-"] {{
+        span[data-baseweb="tag"], div[data-baseweb="tag"], span[class*="st-"] {{
             background-color: #2a4e36 !important;
             border: 1px solid #386646 !important;
             border-radius: 4px !important;
         }}
-        
-        span[data-baseweb="tag"] span,
-        div[data-baseweb="tag"] span {{
+        span[data-baseweb="tag"] span, div[data-baseweb="tag"] span {{
             color: #ffffff !important;
         }}
-
-        span[data-baseweb="tag"] svg,
-        div[data-baseweb="tag"] svg {{
+        span[data-baseweb="tag"] svg, div[data-baseweb="tag"] svg {{
             fill: #ffffff !important;
             color: #ffffff !important;
         }}
-
-        /* Botão de Download */
         div.stDownloadButton > button {{
             margin-top: 1rem;
             padding: 0.6rem 1.5rem !important;
@@ -214,18 +180,14 @@ def carregar_configuracao_estilo(caminho_imagem):
     except Exception as e:
         st.warning(f"Não foi possível carregar o estilo de fundo: {e}")
 
-# Aplica o estilo e fundo
 carregar_configuracao_estilo("fundo do maleiro.png")
 
-# Layout de cabeçalho centralizado
+# Layout de cabeçalho
 col_head1, col_head2, col_head3 = st.columns([2, 6, 2])
-
 with col_head1:
-    st.write("")  # Espaçador simétrico à esquerda
-
+    st.write("")
 with col_head2:
     st.markdown('<div class="titulo-personalizado">📊 Gerador de Mala Direta</div>', unsafe_allow_html=True)
-
 with col_head3:
     st.markdown('<div class="user-header-box">', unsafe_allow_html=True)
     st.write(f"👤 **{st.session_state.get('usuario_logado', '')}**")
@@ -234,18 +196,14 @@ with col_head3:
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
-# Carregamento do arquivo Excel
 @st.cache_data
 def carregar_dados():
     return pd.read_excel("sua_planilha.xlsx", header=0)
 
 try:
     df_original = carregar_dados()
-    
-    # Limpa espaços em branco dos nomes das colunas
     df_original.columns = [str(col).strip() for col in df_original.columns]
-    df_filtrado = df_original.copy()
-
+    
     # Mapeamento dinâmico das colunas
     coluna_situacao = "Situação do Município" if "Situação do Município" in df_original.columns else (df_original.columns[2] if len(df_original.columns) > 2 else None)
     coluna_porte = "Tipo" if "Tipo" in df_original.columns else (df_original.columns[1] if len(df_original.columns) > 1 else None)
@@ -253,13 +211,11 @@ try:
     coluna_uf = "UF" if "UF" in df_original.columns else (df_original.columns[6] if len(df_original.columns) > 6 else None)
     coluna_municipio = "Muncípio" if "Muncípio" in df_original.columns else ("Município" if "Município" in df_original.columns else (df_original.columns[7] if len(df_original.columns) > 7 else None))
 
-    # Função para normalizar comparações nos filtros
     def normalizar(texto):
         if pd.isna(texto):
             return ""
         return str(texto).strip().lower()
 
-    # Tratamento da Coluna Ranking
     def tratar_item_ranking(valor):
         if pd.isna(valor):
             return ""
@@ -282,34 +238,28 @@ try:
 
     if coluna_ranking and coluna_ranking in df_original.columns:
         df_original[coluna_ranking] = df_original[coluna_ranking].apply(tratar_item_ranking)
-        df_filtrado[coluna_ranking] = df_filtrado[coluna_ranking].apply(tratar_item_ranking)
 
-    def obter_opcoes_unicas(df, coluna):
-        if not coluna or coluna not in df.columns:
-            return ["Selecionar Todos"]
-        valores_brutos = df[coluna].dropna().astype(str).str.strip().tolist()
-        valores_formatados = sorted(list(set(v for v in valores_brutos if v)))
-        return ["Selecionar Todos"] + valores_formatados
-
-    # --- BARRA DE FILTROS ---
+    # --- BARRA DE FILTROS DINÂMICOS ---
     st.markdown('<div class="filter-header-badge">🔍 Consulta e Filtros</div>', unsafe_allow_html=True)
 
     c1, c2, c3, c4, c5 = st.columns([1, 1, 1, 1, 1.2])
+
+    df_filtrado = df_original.copy()
 
     # 1. Situação
     with c1:
         st.markdown('<div class="filter-label-card">1. Situação (Filiação)</div>', unsafe_allow_html=True)
         if coluna_situacao and coluna_situacao in df_original.columns:
-            opcoes_sit = obter_opcoes_unicas(df_original, coluna_situacao)
+            opcoes_sit = ["Selecionar Todos"] + sorted([v for v in df_filtrado[coluna_situacao].dropna().astype(str).str.strip().unique().tolist() if v])
             sel_sit = st.selectbox("Selecione a Situação:", options=opcoes_sit, key="sb_sit")
             if sel_sit != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_situacao].apply(normalizar) == normalizar(sel_sit)]
 
-    # 2. Porte
+    # 2. Porte (baseado no resultado da Situação)
     with c2:
         st.markdown('<div class="filter-label-card">2. Porte</div>', unsafe_allow_html=True)
         if coluna_porte and coluna_porte in df_original.columns:
-            opcoes_porte = obter_opcoes_unicas(df_original, coluna_porte)
+            opcoes_porte = ["Selecionar Todos"] + sorted([v for v in df_filtrado[coluna_porte].dropna().astype(str).str.strip().unique().tolist() if v])
             sel_porte = st.selectbox("Selecione o Porte:", options=opcoes_porte, key="sb_porte")
             if sel_porte != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_porte].apply(normalizar) == normalizar(sel_porte)]
@@ -318,10 +268,9 @@ try:
     with c3:
         st.markdown('<div class="filter-label-card">3. Ranking</div>', unsafe_allow_html=True)
         if coluna_ranking and coluna_ranking in df_original.columns:
-            valores_ranking = [v for v in df_original[coluna_ranking].dropna().unique().tolist() if str(v).strip()]
+            valores_ranking = [v for v in df_filtrado[coluna_ranking].dropna().unique().tolist() if str(v).strip()]
             valores_ordenados = sorted(valores_ranking, key=chave_ordenacao_ranking)
             opcoes_rank = ["Selecionar Todos"] + valores_ordenados
-            
             sel_rank = st.selectbox("Selecione o Ranking:", options=opcoes_rank, key="sb_rank")
             if sel_rank != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_ranking].apply(normalizar) == normalizar(sel_rank)]
@@ -330,7 +279,7 @@ try:
     with c4:
         st.markdown('<div class="filter-label-card">4. Estado (UF)</div>', unsafe_allow_html=True)
         if coluna_uf and coluna_uf in df_original.columns:
-            opcoes_uf = ["Selecionar Todos"] + sorted(df_original[coluna_uf].dropna().astype(str).str.strip().str.upper().unique().tolist())
+            opcoes_uf = ["Selecionar Todos"] + sorted([v for v in df_filtrado[coluna_uf].dropna().astype(str).str.strip().str.upper().unique().tolist() if v])
             sel_uf = st.selectbox("Selecione a UF:", options=opcoes_uf, key="sb_uf")
             if sel_uf != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_uf].apply(normalizar) == normalizar(sel_uf)]
@@ -339,7 +288,7 @@ try:
     with c5:
         st.markdown('<div class="filter-label-card">5. Município(s)</div>', unsafe_allow_html=True)
         if coluna_municipio and coluna_municipio in df_original.columns:
-            opcoes_mun = ["Selecionar Todos"] + sorted(df_filtrado[coluna_municipio].dropna().astype(str).str.strip().unique().tolist())
+            opcoes_mun = ["Selecionar Todos"] + sorted([v for v in df_filtrado[coluna_municipio].dropna().astype(str).str.strip().unique().tolist() if v])
             sel_mun = st.selectbox("Escolha o Município:", options=opcoes_mun, key="sb_mun")
             if sel_mun != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_municipio].apply(normalizar) == normalizar(sel_mun)]
@@ -356,10 +305,8 @@ try:
         * **Tratamento 3**: Formato de pronome direto/saudação personalizada usada para correspondência da Mala Direta (ex: *Prefeito(a)* / *Senhor(a) Prefeito(a)*).
         """)
 
-    # Filtra as colunas exportáveis removendo qualquer referência ao "Valor 2027"
     colunas_exportaveis = [col for col in df_original.columns if "valor 2027" not in str(col).strip().lower()]
 
-    # Validação e limpeza do session_state para garantir que apenas opções válidas existam
     if "ms_cols" not in st.session_state:
         st.session_state["ms_cols"] = colunas_exportaveis
     else:
@@ -411,7 +358,7 @@ try:
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
     elif len(df_filtrado) == 0:
-        st.error("⚠️ Nenhuma linha encontrada para a combinação de filtros selecionada. Redefina alguns filtros para 'Selecionar Todos'.")
+        st.warning("⚠️ Nenhuma linha encontrada para a combinação de filtros selecionada. Altere ou redefina os filtros selecionados.")
     else:
         st.warning("Selecione ao menos uma coluna no campo acima para habilitar o download.")
 
