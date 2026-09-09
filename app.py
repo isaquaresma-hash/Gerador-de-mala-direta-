@@ -251,33 +251,33 @@ try:
     if "_ranking_tratado" in colunas_disponiveis:
         colunas_disponiveis.remove("_ranking_tratado")
 
-    # Identifica e remove as colunas usadas nos filtros do seletor padrão inicial
+    # Identifica e remove as colunas dos filtros do seletor padrão inicial
     colunas_dos_filtros = [coluna_porte, coluna_situacao, coluna_uf, coluna_municipio, coluna_ranking]
     colunas_dos_filtros = [c for c in colunas_dos_filtros if c in colunas_disponiveis]
 
     # Padrão inicial: todas as colunas exceto as dos filtros superiores
     colunas_padrao_iniciais = [c for c in colunas_disponiveis if c not in colunas_dos_filtros]
 
-    if "cols_selected" not in st.session_state:
-        st.session_state["cols_selected"] = colunas_padrao_iniciais
+    # Inicialização do estado da chave do multiselect
+    if "ms_cols" not in st.session_state:
+        st.session_state["ms_cols"] = colunas_padrao_iniciais
 
     # Botões de marcação rápida
     btn_col1, btn_col2, _ = st.columns([1.5, 1.5, 5])
 
     with btn_col1:
         if st.button("Marcar Todas"):
-            st.session_state["cols_selected"] = colunas_disponiveis
+            st.session_state["ms_cols"] = colunas_disponiveis
             st.rerun()
 
     with btn_col2:
         if st.button("Desmarcar Todas"):
-            st.session_state["cols_selected"] = []
+            st.session_state["ms_cols"] = []
             st.rerun()
 
     colunas_selecionadas = st.multiselect(
         "Escolha as colunas desejadas para compor o Excel:",
         options=colunas_disponiveis,
-        default=st.session_state["cols_selected"],
         key="ms_cols"
     )
 
