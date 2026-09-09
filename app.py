@@ -186,6 +186,9 @@ try:
         valores = df[coluna].dropna().astype(str).str.strip().unique()
         return ["Selecionar Todos"] + sorted(list(set(valores)))
 
+    # Lista de colunas que foram ativamente filtradas na parte de cima
+    colunas_filtro_utilizadas = []
+
     # --- BARRA DE FILTROS (5 COLUNAS SEPARADAS) ---
     st.markdown('<div class="filter-header-badge">🔍 Consulta e Filtros</div>', unsafe_allow_html=True)
 
@@ -199,6 +202,7 @@ try:
             sel_sit = st.selectbox("Selecione a Situação:", options=opcoes_sit, key="sb_sit")
             if sel_sit != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_situacao].astype(str).str.strip().str.upper() == str(sel_sit).strip().upper()]
+                colunas_filtro_utilizadas.append(coluna_situacao)
 
     # 2. Porte / Tipo
     with c2:
@@ -208,6 +212,7 @@ try:
             sel_porte = st.selectbox("Selecione o Porte:", options=opcoes_porte, key="sb_porte")
             if sel_porte != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_porte].astype(str).str.strip().str.upper() == str(sel_porte).strip().upper()]
+                colunas_filtro_utilizadas.append(coluna_porte)
 
     # 3. Ranking
     with c3:
@@ -220,6 +225,7 @@ try:
             sel_rank = st.selectbox("Selecione o Ranking:", options=opcoes_rank, key="sb_rank")
             if sel_rank != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado["_ranking_tratado"] == sel_rank]
+                colunas_filtro_utilizadas.append(coluna_ranking)
 
     # 4. Estado (UF)
     with c4:
@@ -229,6 +235,7 @@ try:
             sel_uf = st.selectbox("Selecione a UF:", options=opcoes_uf, key="sb_uf")
             if sel_uf != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_uf].astype(str).str.strip().str.upper() == str(sel_uf).strip().upper()]
+                colunas_filtro_utilizadas.append(coluna_uf)
 
     # 5. Município
     with c5:
@@ -238,6 +245,7 @@ try:
             sel_mun = st.selectbox("Escolha o Município:", options=opcoes_mun, key="sb_mun")
             if sel_mun != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_municipio].astype(str).str.strip().str.upper() == str(sel_mun).strip().upper()]
+                colunas_filtro_utilizadas.append(coluna_municipio)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -268,9 +276,12 @@ try:
         key="ms_cols"
     )
 
-    if colunas_selecionadas:
-        # Aplica a seleção de colunas sobre o DataFrame FILTRADO pelas buscas acima
-        df_exportar = df_filtrado[colunas_selecionadas]
+    # Combina as colunas ativas dos Filtros + as colunas selecionadas no Multiselect (preservando a ordem da planilha original)
+    todas_colunas_desejadas = list(set(colunas_filtro_utilizadas + colunas_selecionadas))
+    colunas_finais_ordenadas = [col for col in df_original.columns if col in todas_colunas_desejadas and col != "_ranking_tratado"]
+
+    if colunas_finais_ordenadas:
+        df_exportar = df_filtrado[colunas_finais_ordenadas]
 
         buffer = BytesIO()
         with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
