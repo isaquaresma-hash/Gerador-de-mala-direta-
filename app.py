@@ -186,9 +186,6 @@ try:
         valores = df[coluna].dropna().astype(str).str.strip().unique()
         return ["Selecionar Todos"] + sorted(list(set(valores)))
 
-    # Lista de colunas que foram ativamente filtradas na parte de cima
-    colunas_filtro_utilizadas = []
-
     # --- BARRA DE FILTROS (5 COLUNAS SEPARADAS) ---
     st.markdown('<div class="filter-header-badge">🔍 Consulta e Filtros</div>', unsafe_allow_html=True)
 
@@ -202,9 +199,8 @@ try:
             sel_sit = st.selectbox("Selecione a Situação:", options=opcoes_sit, key="sb_sit")
             if sel_sit != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_situacao].astype(str).str.strip().str.upper() == str(sel_sit).strip().upper()]
-                colunas_filtro_utilizadas.append(coluna_situacao)
 
-    # 2. Porte / Tipo
+    # 2. Porte / Tipo (Capitais, etc.)
     with c2:
         st.markdown('<div class="filter-label-card">2. Porte</div>', unsafe_allow_html=True)
         if coluna_porte and coluna_porte in df_original.columns:
@@ -212,30 +208,27 @@ try:
             sel_porte = st.selectbox("Selecione o Porte:", options=opcoes_porte, key="sb_porte")
             if sel_porte != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_porte].astype(str).str.strip().str.upper() == str(sel_porte).strip().upper()]
-                colunas_filtro_utilizadas.append(coluna_porte)
 
     # 3. Ranking
     with c3:
         st.markdown('<div class="filter-label-card">3. Ranking</div>', unsafe_allow_html=True)
         if coluna_ranking and "_ranking_tratado" in df_filtrado.columns:
-            valores_ranking = df_filtrado["_ranking_tratado"].dropna().unique().tolist()
+            valores_ranking = df_original["_ranking_tratado"].dropna().unique().tolist()
             valores_ordenados = sorted(valores_ranking, key=chave_ordenacao_ranking)
             opcoes_rank = ["Selecionar Todos"] + valores_ordenados
             
             sel_rank = st.selectbox("Selecione o Ranking:", options=opcoes_rank, key="sb_rank")
             if sel_rank != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado["_ranking_tratado"] == sel_rank]
-                colunas_filtro_utilizadas.append(coluna_ranking)
 
     # 4. Estado (UF)
     with c4:
         st.markdown('<div class="filter-label-card">4. Estado (UF)</div>', unsafe_allow_html=True)
         if coluna_uf and coluna_uf in df_original.columns:
-            opcoes_uf = ["Selecionar Todos"] + sorted(df_filtrado[coluna_uf].dropna().astype(str).str.strip().str.upper().unique().tolist())
+            opcoes_uf = ["Selecionar Todos"] + sorted(df_original[coluna_uf].dropna().astype(str).str.strip().str.upper().unique().tolist())
             sel_uf = st.selectbox("Selecione a UF:", options=opcoes_uf, key="sb_uf")
             if sel_uf != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_uf].astype(str).str.strip().str.upper() == str(sel_uf).strip().upper()]
-                colunas_filtro_utilizadas.append(coluna_uf)
 
     # 5. Município
     with c5:
@@ -245,14 +238,13 @@ try:
             sel_mun = st.selectbox("Escolha o Município:", options=opcoes_mun, key="sb_mun")
             if sel_mun != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_municipio].astype(str).str.strip().str.upper() == str(sel_mun).strip().upper()]
-                colunas_filtro_utilizadas.append(coluna_municipio)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
     # --- SELEÇÃO DE COLUNAS PARA EXPORTAÇÃO ---
     st.markdown('<div class="filter-header-badge">📋 Seleção de Colunas para Exportação</div>', unsafe_allow_html=True)
     
-    colunas_dos_filtros = [coluna_porte, coluna_situacao, coluna_uf, coluna_municipio, coluna_ranking, "_ranking_tratado"]
+    colunas_dos_filtros = [c for c in [coluna_porte, coluna_situacao, coluna_uf, coluna_municipio, coluna_ranking, "_ranking_tratado"] if c is not None]
     colunas_exportaveis = [col for col in df_original.columns if col not in colunas_dos_filtros]
 
     if "ms_cols" not in st.session_state:
@@ -276,9 +268,11 @@ try:
         key="ms_cols"
     )
 
-    # Combina as colunas ativas dos Filtros + as colunas selecionadas no Multiselect (preservando a ordem da planilha original)
-    todas_colunas_desejadas = list(set(colunas_filtro_utilizadas + colunas_selecionadas))
-    colunas_finais_ordenadas = [col for col in df_original.columns if col in todas_colunas_desejadas and col != "_ranking_tratado"]
+    # Garante que as colunas essenciais de identificação estejam sempre presentes junto com as colunas adicionais
+    colunas_identificacao = [c for c in [coluna_porte, coluna_situacao, coluna_uf, coluna_municipio, coluna_ranking] if c in df_original.columns]
+    
+    # Monta a lista final de colunas na mesma ordem da planilha original
+    colunas_finais_ordenadas = [col for col in df_original.columns if (col in colunas_identificacao or col in colunas_selecionadas) and col != "_ranking_tratado"]
 
     if colunas_finais_ordenadas:
         df_exportar = df_filtrado[colunas_finais_ordenadas]
