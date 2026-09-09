@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 import base64
+import re
 
 # Configuração da página do Streamlit em largura total
 st.set_page_config(page_title="Gerador de Mala Direta", layout="wide")
@@ -128,17 +129,42 @@ try:
     df_filtrado = df_original.copy()
 
     # Mapeamento pelas Posições das Colunas na Planilha:
-    # Coluna B (1) = Porte | Coluna C (2) = Situação/Filiação
-    # Coluna G (6) = UF | Coluna H (7) = Município | Coluna T (19) = Ranking
-    coluna_porte = df_original.columns[1] if len(df_original.columns) > 1 else None
-    coluna_situacao = df_original.columns[2] if len(df_original.columns) > 2 else None
-    coluna_uf = df_original.columns[6] if len(df_original.columns) > 6 else None
-    coluna_municipio = df_original.columns[7] if len(df_original.columns) > 7 else None
-    coluna_ranking = df_original.columns[19] if len(df_original.columns) > 19 else None
+    coluna_porte = df_original.columns[1] if len(df_original.columns) > 1 else None        # Coluna B
+    coluna_situacao = df_original.columns[2] if len(df_original.columns) > 2 else None     # Coluna C
+    coluna_uf = df_original.columns[6] if len(df_original.columns) > 6 else None           # Coluna G
+    coluna_municipio = df_original.columns[7] if len(df_original.columns) > 7 else None    # Coluna H
+    coluna_ranking = df_original.columns[19] if len(df_original.columns) > 19 else None    # Coluna T
 
-    # Função auxiliar para limpar e remover duplicatas ignorando diferenças entre maiúsculas e minúsculas
+    # Função para tratar e normalizar os valores da coluna Ranking
+    def tratar_item_ranking(valor):
+        if pd.isna(valor):
+            return None
+        val_str = str(valor).strip()
+        try:
+            val_float = float(val_str)
+            if 0 < val_float <= 1:
+                return f"{int(round(val_float * 100))}%"
+            elif val_float > 1:
+                return f"{int(val_float)}%"
+        except ValueError:
+            pass
+        return val_str.capitalize()
+
+    # Função para ordenação personalizada: % em ordem crescente, seguidos por textos
+    def chave_ordenacao_ranking(item):
+        m = re.match(r"^(\d+)%$", item)
+        if m:
+            return (0, int(m.group(1)))
+        return (1, item)
+
+    # Aplicação do tratamento para a Coluna T
+    if coluna_ranking:
+        df_original["_ranking_tratado"] = df_original[coluna_ranking].apply(tratar_item_ranking)
+        df_filtrado["_ranking_tratado"] = df_filtrado[coluna_ranking].apply(tratar_item_ranking)
+
+    # Função para limpar e capitalizar textos simples
     def obter_opcoes_unicas(df, coluna):
-        if not coluna:
+        if not coluna or coluna not in df.columns:
             return ["Selecionar Todos"]
         valores = df[coluna].dropna().astype(str).str.strip().str.capitalize().unique()
         return ["Selecionar Todos"] + sorted(valores.tolist())
@@ -188,10 +214,13 @@ try:
     with c5:
         st.markdown('<div class="filter-label-card">5. Ranking</div>', unsafe_allow_html=True)
         if coluna_ranking:
-            opcoes_rank = ["Selecionar Todos"] + sorted(df_filtrado[coluna_ranking].dropna().astype(str).str.strip().unique().tolist())
+            valores_ranking = df_filtrado["_ranking_tratado"].dropna().unique().tolist()
+            valores_ordenados = sorted(valores_ranking, key=chave_ordenacao_ranking)
+            opcoes_rank = ["Selecionar Todos"] + valores_ordenados
+            
             sel_rank = st.selectbox("Selecione o Ranking:", options=opcoes_rank, key="sb_rank")
             if sel_rank != "Selecionar Todos":
-                df_filtrado = df_filtrado[df_filtrado[coluna_ranking].astype(str).str.strip() == sel_rank]
+                df_filtrado = df_filtrado[df_filtrado["_ranking_tratado"] == sel_rank]
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -199,6 +228,8 @@ try:
     st.markdown('<div class="filter-header-badge">📋 Seleção de Colunas para Exportação</div>', unsafe_allow_html=True)
     
     colunas_disponiveis = df_original.columns.tolist()
+    if "_ranking_tratado" in colunas_disponiveis:
+        colunas_disponiveis.remove("_ranking_tratado")
 
     # Botões de marcação rápida
     btn_col1, btn_col2, _ = st.columns([1.5, 1.5, 5])
