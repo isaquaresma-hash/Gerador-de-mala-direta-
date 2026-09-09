@@ -127,52 +127,71 @@ try:
     df_original = carregar_dados()
     df_filtrado = df_original.copy()
 
-    # Mapeamento pelas Posições Exatas das Colunas na Planilha (A=0, B=1, C=2, G=6, H=7)
-    coluna_porte = df_original.columns[1] if len(df_original.columns) > 1 else None       # Coluna B: Tipo / Porte
-    coluna_situacao = df_original.columns[2] if len(df_original.columns) > 2 else None    # Coluna C: Situação / Filiação
-    coluna_uf = df_original.columns[6] if len(df_original.columns) > 6 else None          # Coluna G: UF / Estado
-    coluna_municipio = df_original.columns[7] if len(df_original.columns) > 7 else None   # Coluna H: Município
+    # Mapeamento pelas Posições das Colunas na Planilha:
+    # Coluna B (1) = Porte | Coluna C (2) = Situação/Filiação
+    # Coluna G (6) = UF | Coluna H (7) = Município | Coluna T (19) = Ranking
+    coluna_porte = df_original.columns[1] if len(df_original.columns) > 1 else None
+    coluna_situacao = df_original.columns[2] if len(df_original.columns) > 2 else None
+    coluna_uf = df_original.columns[6] if len(df_original.columns) > 6 else None
+    coluna_municipio = df_original.columns[7] if len(df_original.columns) > 7 else None
+    coluna_ranking = df_original.columns[19] if len(df_original.columns) > 19 else None
 
-    # --- BARRA DE FILTROS (4 COLUNAS SEPARADAS) ---
+    # Função auxiliar para limpar e remover duplicatas ignorando diferenças entre maiúsculas e minúsculas
+    def obter_opcoes_unicas(df, coluna):
+        if not coluna:
+            return ["Selecionar Todos"]
+        valores = df[coluna].dropna().astype(str).str.strip().str.capitalize().unique()
+        return ["Selecionar Todos"] + sorted(valores.tolist())
+
+    # --- BARRA DE FILTROS (5 COLUNAS SEPARADAS) ---
     st.markdown('<div class="filter-header-badge">🔍 Consulta e Filtros</div>', unsafe_allow_html=True)
 
-    c1, c2, c3, c4 = st.columns([1, 1, 1, 1.5])
+    c1, c2, c3, c4, c5 = st.columns([1, 1, 1, 1.2, 1])
 
     # 1. Situação / Filiação (Coluna C)
     with c1:
         st.markdown('<div class="filter-label-card">1. Situação (Filiação)</div>', unsafe_allow_html=True)
         if coluna_situacao:
-            opcoes_sit = ["Selecionar Todos"] + sorted(df_original[coluna_situacao].dropna().astype(str).unique().tolist())
+            opcoes_sit = obter_opcoes_unicas(df_original, coluna_situacao)
             sel_sit = st.selectbox("Selecione a Situação:", options=opcoes_sit, key="sb_sit")
             if sel_sit != "Selecionar Todos":
-                df_filtrado = df_filtrado[df_filtrado[coluna_situacao].astype(str) == sel_sit]
+                df_filtrado = df_filtrado[df_filtrado[coluna_situacao].astype(str).str.strip().str.capitalize() == sel_sit]
 
     # 2. Porte (Coluna B)
     with c2:
         st.markdown('<div class="filter-label-card">2. Porte</div>', unsafe_allow_html=True)
         if coluna_porte:
-            opcoes_porte = ["Selecionar Todos"] + sorted(df_filtrado[coluna_porte].dropna().astype(str).unique().tolist())
+            opcoes_porte = obter_opcoes_unicas(df_filtrado, coluna_porte)
             sel_porte = st.selectbox("Selecione o Porte:", options=opcoes_porte, key="sb_porte")
             if sel_porte != "Selecionar Todos":
-                df_filtrado = df_filtrado[df_filtrado[coluna_porte].astype(str) == sel_porte]
+                df_filtrado = df_filtrado[df_filtrado[coluna_porte].astype(str).str.strip().str.capitalize() == sel_porte]
 
     # 3. Estado / UF (Coluna G)
     with c3:
         st.markdown('<div class="filter-label-card">3. Estado (UF)</div>', unsafe_allow_html=True)
         if coluna_uf:
-            opcoes_uf = ["Selecionar Todos"] + sorted(df_filtrado[coluna_uf].dropna().astype(str).unique().tolist())
+            opcoes_uf = ["Selecionar Todos"] + sorted(df_filtrado[coluna_uf].dropna().astype(str).str.strip().str.upper().unique().tolist())
             sel_uf = st.selectbox("Selecione a UF:", options=opcoes_uf, key="sb_uf")
             if sel_uf != "Selecionar Todos":
-                df_filtrado = df_filtrado[df_filtrado[coluna_uf].astype(str) == sel_uf]
+                df_filtrado = df_filtrado[df_filtrado[coluna_uf].astype(str).str.strip().str.upper() == sel_uf]
 
     # 4. Município(s) (Coluna H)
     with c4:
         st.markdown('<div class="filter-label-card">4. Município(s)</div>', unsafe_allow_html=True)
         if coluna_municipio:
-            opcoes_mun = ["Selecionar Todos"] + sorted(df_filtrado[coluna_municipio].dropna().astype(str).unique().tolist())
+            opcoes_mun = ["Selecionar Todos"] + sorted(df_filtrado[coluna_municipio].dropna().astype(str).str.strip().unique().tolist())
             sel_mun = st.selectbox("Escolha o Município:", options=opcoes_mun, key="sb_mun")
             if sel_mun != "Selecionar Todos":
-                df_filtrado = df_filtrado[df_filtrado[coluna_municipio].astype(str) == sel_mun]
+                df_filtrado = df_filtrado[df_filtrado[coluna_municipio].astype(str).str.strip() == sel_mun]
+
+    # 5. Ranking (Coluna T)
+    with c5:
+        st.markdown('<div class="filter-label-card">5. Ranking</div>', unsafe_allow_html=True)
+        if coluna_ranking:
+            opcoes_rank = ["Selecionar Todos"] + sorted(df_filtrado[coluna_ranking].dropna().astype(str).str.strip().unique().tolist())
+            sel_rank = st.selectbox("Selecione o Ranking:", options=opcoes_rank, key="sb_rank")
+            if sel_rank != "Selecionar Todos":
+                df_filtrado = df_filtrado[df_filtrado[coluna_ranking].astype(str).str.strip() == sel_rank]
 
     st.markdown("<br>", unsafe_allow_html=True)
 
