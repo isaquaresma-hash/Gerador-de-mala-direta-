@@ -191,6 +191,8 @@ try:
 
     c1, c2, c3, c4, c5 = st.columns([1, 1, 1, 1, 1.2])
 
+    colunas_filtro_ativas = []
+
     # 1. Situação
     with c1:
         st.markdown('<div class="filter-label-card">1. Situação (Filiação)</div>', unsafe_allow_html=True)
@@ -199,6 +201,7 @@ try:
             sel_sit = st.selectbox("Selecione a Situação:", options=opcoes_sit, key="sb_sit")
             if sel_sit != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_situacao].astype(str).str.strip().str.title() == sel_sit]
+                colunas_filtro_ativas.append(coluna_situacao)
 
     # 2. Porte / Tipo
     with c2:
@@ -208,6 +211,7 @@ try:
             sel_porte = st.selectbox("Selecione o Porte:", options=opcoes_porte, key="sb_porte")
             if sel_porte != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_porte].astype(str).str.strip().str.title() == sel_porte]
+                colunas_filtro_ativas.append(coluna_porte)
 
     # 3. Ranking
     with c3:
@@ -220,6 +224,7 @@ try:
             sel_rank = st.selectbox("Selecione o Ranking:", options=opcoes_rank, key="sb_rank")
             if sel_rank != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado["_ranking_tratado"] == sel_rank]
+                colunas_filtro_ativas.append(coluna_ranking)
 
     # 4. Estado (UF)
     with c4:
@@ -229,6 +234,7 @@ try:
             sel_uf = st.selectbox("Selecione a UF:", options=opcoes_uf, key="sb_uf")
             if sel_uf != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_uf].astype(str).str.strip().str.upper() == sel_uf]
+                colunas_filtro_ativas.append(coluna_uf)
 
     # 5. Município
     with c5:
@@ -238,23 +244,19 @@ try:
             sel_mun = st.selectbox("Escolha o Município:", options=opcoes_mun, key="sb_mun")
             if sel_mun != "Selecionar Todos":
                 df_filtrado = df_filtrado[df_filtrado[coluna_municipio].astype(str).str.strip() == sel_mun]
+                colunas_filtro_ativas.append(coluna_municipio)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
     # --- SELEÇÃO DE COLUNAS PARA EXPORTAÇÃO ---
     st.markdown('<div class="filter-header-badge">📋 Seleção de Colunas para Exportação</div>', unsafe_allow_html=True)
     
-    # Define as colunas que pertencem estritamente aos filtros
     colunas_dos_filtros = [coluna_porte, coluna_situacao, coluna_uf, coluna_municipio, coluna_ranking, "_ranking_tratado"]
-    
-    # Cria a lista de opções do Multiselect EXCLUINDO totalmente as colunas dos filtros
     colunas_exportaveis = [col for col in df_original.columns if col not in colunas_dos_filtros]
 
-    # Inicialização da chave no session state apenas com as colunas permitidas
     if "ms_cols" not in st.session_state:
         st.session_state["ms_cols"] = colunas_exportaveis
 
-    # Botões de marcação rápida
     btn_col1, btn_col2, _ = st.columns([1.5, 1.5, 5])
 
     with btn_col1:
@@ -273,8 +275,11 @@ try:
         key="ms_cols"
     )
 
-    if colunas_selecionadas:
-        df_exportar = df_filtrado[colunas_selecionadas]
+    # Junta as colunas ativas dos Filtros com as colunas marcadas no Multiselect (mantendo a ordem original)
+    colunas_finais_exportacao = [c for c in df_original.columns if (c in colunas_filtro_ativas or c in colunas_selecionadas) and c != "_ranking_tratado"]
+
+    if colunas_finais_exportacao:
+        df_exportar = df_filtrado[colunas_finais_exportacao]
 
         buffer = BytesIO()
         with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
