@@ -3,6 +3,7 @@ import pandas as pd
 from io import BytesIO
 import base64
 import re
+from openpyxl.styles import PatternFill, Font
 
 # Configuração da página do Streamlit em largura total
 st.set_page_config(page_title="Gerador de Mala Direta", layout="wide")
@@ -155,30 +156,32 @@ try:
     coluna_uf = "UF" if "UF" in df_original.columns else (df_original.columns[6] if len(df_original.columns) > 6 else None)
     coluna_municipio = "Muncípio" if "Muncípio" in df_original.columns else ("Município" if "Município" in df_original.columns else (df_original.columns[7] if len(df_original.columns) > 7 else None))
 
-    # Tratamento da Coluna Ranking
+    # Tratamento consistente da Coluna Ranking
     def tratar_item_ranking(valor):
         if pd.isna(valor):
             return None
         val_str = str(valor).strip()
         try:
-            val_float = float(val_str)
+            # Substitui vírgula por ponto para conversão de float
+            val_float = float(val_str.replace(',', '.'))
             if 0 < val_float <= 1:
                 return f"{int(round(val_float * 100))}%"
             elif val_float > 1:
-                return f"{int(val_float)}%"
+                return f"{int(round(val_float))}%"
         except ValueError:
             pass
-        return val_str.capitalize()
+        return val_str.strip()
 
     def chave_ordenacao_ranking(item):
-        m = re.match(r"^(\d+)%$", item)
+        m = re.match(r"^(\d+)%$", str(item))
         if m:
             return (0, int(m.group(1)))
-        return (1, item)
+        return (1, str(item))
 
+    # Aplica tratamento do ranking
     if coluna_ranking and coluna_ranking in df_original.columns:
-        df_original["_ranking_tratado"] = df_original[coluna_ranking].apply(tratar_item_ranking)
-        df_filtrado["_ranking_tratado"] = df_filtrado[coluna_ranking].apply(tratar_item_ranking)
+        df_original[coluna_ranking] = df_original[coluna_ranking].apply(tratar_item_ranking)
+        df_filtrado[coluna_ranking] = df_filtrado[coluna_ranking].apply(tratar_item_ranking)
 
     def obter_opcoes_unicas(df, coluna):
         if not coluna or coluna not in df.columns:
@@ -212,14 +215,14 @@ try:
     # 3. Ranking
     with c3:
         st.markdown('<div class="filter-label-card">3. Ranking</div>', unsafe_allow_html=True)
-        if coluna_ranking and "_ranking_tratado" in df_filtrado.columns:
-            valores_ranking = df_original["_ranking_tratado"].dropna().unique().tolist()
+        if coluna_ranking and coluna_ranking in df_original.columns:
+            valores_ranking = df_original[coluna_ranking].dropna().unique().tolist()
             valores_ordenados = sorted(valores_ranking, key=chave_ordenacao_ranking)
             opcoes_rank = ["Selecionar Todos"] + valores_ordenados
             
             sel_rank = st.selectbox("Selecione o Ranking:", options=opcoes_rank, key="sb_rank")
             if sel_rank != "Selecionar Todos":
-                df_filtrado = df_filtrado[df_filtrado["_ranking_tratado"] == sel_rank]
+                df_filtrado = df_filtrado[df_filtrado[coluna_ranking] == sel_rank]
 
     # 4. Estado (UF)
     with c4:
@@ -244,7 +247,7 @@ try:
     # --- SELEÇÃO DE COLUNAS PARA EXPORTAÇÃO ---
     st.markdown('<div class="filter-header-badge">📋 Seleção de Colunas para Exportação</div>', unsafe_allow_html=True)
     
-    colunas_dos_filtros = [c for c in [coluna_porte, coluna_situacao, coluna_uf, coluna_municipio, coluna_ranking, "_ranking_tratado"] if c is not None]
+    colunas_dos_filtros = [c for c in [coluna_porte, coluna_situacao, coluna_uf, coluna_municipio, coluna_ranking] if c is not None]
     colunas_exportaveis = [col for col in df_original.columns if col not in colunas_dos_filtros]
 
     if "ms_cols" not in st.session_state:
@@ -268,11 +271,8 @@ try:
         key="ms_cols"
     )
 
-    # Garante que as colunas essenciais de identificação estejam sempre presentes junto com as colunas adicionais
     colunas_identificacao = [c for c in [coluna_porte, coluna_situacao, coluna_uf, coluna_municipio, coluna_ranking] if c in df_original.columns]
-    
-    # Monta a lista final de colunas na mesma ordem da planilha original
-    colunas_finais_ordenadas = [col for col in df_original.columns if (col in colunas_identificacao or col in colunas_selecionadas) and col != "_ranking_tratado"]
+    colunas_finais_ordenadas = [col for col in df_original.columns if (col in colunas_identificacao or col in colunas_selecionadas)]
 
     if colunas_finais_ordenadas:
         df_exportar = df_filtrado[colunas_finais_ordenadas]
@@ -280,6 +280,19 @@ try:
         buffer = BytesIO()
         with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
             df_exportar.to_excel(writer, index=False, sheet_name='Mala Direta')
+            
+            # Formatação visual do Excel gerado (Cabeçalho estilizado)
+            workbook = writer.book
+            worksheet = writer.sheets['Mala Direta']
+            
+            # Cor de Fundo Verde Escuro (#143621) e Texto em Branco Negrito
+            header_fill = PatternFill(start_color="143621", end_color="143621", fill_type="solid")
+            header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+            
+            for col_num, col_name in enumerate(colunas_finais_ordenadas, 1):
+                cell = worksheet.cell(row=1, column=col_num)
+                cell.fill = header_fill
+                cell.font = header_font
         
         st.write(f"📊 Registros encontrados com os filtros atuais: **{len(df_exportar)}**")
         
