@@ -162,7 +162,6 @@ try:
             return None
         val_str = str(valor).strip()
         try:
-            # Substitui vírgula por ponto para conversão de float
             val_float = float(val_str.replace(',', '.'))
             if 0 < val_float <= 1:
                 return f"{int(round(val_float * 100))}%"
@@ -178,16 +177,18 @@ try:
             return (0, int(m.group(1)))
         return (1, str(item))
 
-    # Aplica tratamento do ranking
     if coluna_ranking and coluna_ranking in df_original.columns:
         df_original[coluna_ranking] = df_original[coluna_ranking].apply(tratar_item_ranking)
         df_filtrado[coluna_ranking] = df_filtrado[coluna_ranking].apply(tratar_item_ranking)
 
+    # Função atualizada para eliminar duplicidades ignorando maiúsculas/minúsculas
     def obter_opcoes_unicas(df, coluna):
         if not coluna or coluna not in df.columns:
             return ["Selecionar Todos"]
-        valores = df[coluna].dropna().astype(str).str.strip().unique()
-        return ["Selecionar Todos"] + sorted(list(set(valores)))
+        valores_brutos = df[coluna].dropna().astype(str).str.strip().tolist()
+        # Converte para Title Case (ex: "filiado" -> "Filiado") para remover duplicados
+        valores_formatados = sorted(list(set(v.title() for v in valores_brutos if v)))
+        return ["Selecionar Todos"] + valores_formatados
 
     # --- BARRA DE FILTROS (5 COLUNAS SEPARADAS) ---
     st.markdown('<div class="filter-header-badge">🔍 Consulta e Filtros</div>', unsafe_allow_html=True)
@@ -247,6 +248,14 @@ try:
     # --- SELEÇÃO DE COLUNAS PARA EXPORTAÇÃO ---
     st.markdown('<div class="filter-header-badge">📋 Seleção de Colunas para Exportação</div>', unsafe_allow_html=True)
     
+    # Bloco Informativo dos Tratamentos
+    with st.expander("ℹ️ Entenda as colunas de Tratamento (Clique para expandir)"):
+        st.markdown("""
+        * **Tratamento 1**: Forma de vocativo formal direcionado à autoridade (ex: *Exmo(a). Sr(a).*).
+        * **Tratamento 2**: Nome do cargo ou título oficial completo (ex: *Prefeito(a) Municipal*).
+        * **Tratamento 3**: Formato de pronome direto/saudação personalizada usada para correspondência da Mala Direta (ex: *Prefeito(a)* / *Senhor(a) Prefeito(a)*).
+        """)
+
     colunas_dos_filtros = [c for c in [coluna_porte, coluna_situacao, coluna_uf, coluna_municipio, coluna_ranking] if c is not None]
     colunas_exportaveis = [col for col in df_original.columns if col not in colunas_dos_filtros]
 
@@ -281,11 +290,10 @@ try:
         with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
             df_exportar.to_excel(writer, index=False, sheet_name='Mala Direta')
             
-            # Formatação visual do Excel gerado (Cabeçalho estilizado)
+            # Formatação visual do Excel gerado
             workbook = writer.book
             worksheet = writer.sheets['Mala Direta']
             
-            # Cor de Fundo Verde Escuro (#143621) e Texto em Branco Negrito
             header_fill = PatternFill(start_color="143621", end_color="143621", fill_type="solid")
             header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
             
