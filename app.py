@@ -93,7 +93,7 @@ def carregar_configuracao_estilo(caminho_imagem):
             color: #000000 !important;
         }}
 
-        /* SUBSTITUIÇÃO COMPLETA DA COR VERMELHA DAS TAGS DO MULTISELECT */
+        /* Substituição da cor das tags do Multiselect por verde escuro */
         span[data-baseweb="tag"],
         div[data-baseweb="tag"],
         span[class*="st-"] {{
@@ -151,11 +151,11 @@ try:
     df_filtrado = df_original.copy()
 
     # Mapeamento pelas Posições das Colunas na Planilha:
-    coluna_porte = df_original.columns[1] if len(df_original.columns) > 1 else None        # Coluna B
-    coluna_situacao = df_original.columns[2] if len(df_original.columns) > 2 else None     # Coluna C
-    coluna_uf = df_original.columns[6] if len(df_original.columns) > 6 else None           # Coluna G
-    coluna_municipio = df_original.columns[7] if len(df_original.columns) > 7 else None    # Coluna H
-    coluna_ranking = df_original.columns[19] if len(df_original.columns) > 19 else None    # Coluna T
+    coluna_porte = df_original.columns[1] if len(df_original.columns) > 1 else None        # Tipo (Coluna B)
+    coluna_situacao = df_original.columns[2] if len(df_original.columns) > 2 else None     # Situação do Município (Coluna C)
+    coluna_uf = df_original.columns[6] if len(df_original.columns) > 6 else None           # UF (Coluna G)
+    coluna_municipio = df_original.columns[7] if len(df_original.columns) > 7 else None    # Município (Coluna H)
+    coluna_ranking = df_original.columns[19] if len(df_original.columns) > 19 else None    # Ranking (Coluna T)
 
     # Tratamento da Coluna Ranking (T)
     def tratar_item_ranking(valor):
@@ -251,11 +251,18 @@ try:
     if "_ranking_tratado" in colunas_disponiveis:
         colunas_disponiveis.remove("_ranking_tratado")
 
+    # Identifica e remove as colunas usadas nos filtros do seletor padrão inicial
+    colunas_dos_filtros = [coluna_porte, coluna_situacao, coluna_uf, coluna_municipio, coluna_ranking]
+    colunas_dos_filtros = [c for c in colunas_dos_filtros if c in colunas_disponiveis]
+
+    # Padrão inicial: todas as colunas exceto as dos filtros superiores
+    colunas_padrao_iniciais = [c for c in colunas_disponiveis if c not in colunas_dos_filtros]
+
+    if "cols_selected" not in st.session_state:
+        st.session_state["cols_selected"] = colunas_padrao_iniciais
+
     # Botões de marcação rápida
     btn_col1, btn_col2, _ = st.columns([1.5, 1.5, 5])
-    
-    if "cols_selected" not in st.session_state:
-        st.session_state["cols_selected"] = colunas_disponiveis
 
     with btn_col1:
         if st.button("Marcar Todas"):
