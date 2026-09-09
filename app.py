@@ -79,18 +79,21 @@ def carregar_configuracao_estilo(caminho_imagem):
             padding-bottom: 2rem !important;
         }}
 
-        /* Customização para diminuir e REPOSICIONAR AINDA MAIS PARA BAIXO o Título Principal */
+        /* Customização para CENTRALIZAR e REPOSICIONAR O TÍTULO PRINCIPAL */
         .titulo-personalizado {{
-            font-size: 1.8rem !important; /* Tamanho menor da fonte */
+            font-size: 1.8rem !important;
             font-weight: bold;
             color: white !important;
-            margin-top: 140px !important;  /* Desceu mais (de 100px para 140px) */
+            text-align: center !important; /* CENTRALIZADO AQUI */
+            margin-top: 140px !important;
             margin-bottom: 15px !important;
+            width: 100%;
         }}
 
-        /* Customização para alinhar a área do usuário logado */
+        /* Customização para alinhar a área do usuário logado no canto direito */
         .user-header-box {{
-            margin-top: 140px !important;  /* Alinhado com o título */
+            margin-top: 140px !important;
+            text-align: right;
         }}
 
         /* Fundo customizado */
@@ -215,12 +218,14 @@ def carregar_configuracao_estilo(caminho_imagem):
 # Aplica o estilo e fundo
 carregar_configuracao_estilo("fundo do maleiro.png")
 
-# Barra Superior com o título ajustado e usuário logado
-col_head1, col_head2 = st.columns([8, 2])
-with col_head1:
-    # Título personalizado ajustado para 140px de distância do topo
-    st.markdown('<div class="titulo-personalizado">📊 Gerador de Mala Direta</div>', unsafe_allow_html=True)
+# Barra Superior com o título CENTRALIZADO e usuário logado à direita
+col_head1, col_head2, col_head3 = st.columns([2, 6, 2])
+
 with col_head2:
+    # Título centralizado na coluna do meio
+    st.markdown('<div class="titulo-personalizado">📊 Gerador de Mala Direta</div>', unsafe_allow_html=True)
+
+with col_head3:
     st.markdown('<div class="user-header-box">', unsafe_allow_html=True)
     st.write(f"👤 **{st.session_state.get('usuario_logado', '')}**")
     if st.button("🚪 Sair"):
